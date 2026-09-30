@@ -300,7 +300,7 @@ export class CloudSync {
 
   /** Upload embedded (data: URL) images once and reference them by URL — keeps event documents small. */
   private async offloadImages(e: EventData): Promise<EventData> {
-    const urls = [e.branding.logo, ...e.prizes.map((p) => p.image)].filter((u): u is string => !!u && u.startsWith('data:image/'))
+    const urls = [e.branding.logo, e.branding.partnerLogo, ...e.prizes.map((p) => p.image)].filter((u): u is string => !!u && u.startsWith('data:image/'))
     if (!urls.length) return e
     const map = new Map<string, string>()
     for (const dataUrl of new Set(urls)) {
@@ -324,7 +324,7 @@ export class CloudSync {
     const swap = (u?: string) => (u && map.get(u)) || u
     return {
       ...e,
-      branding: { ...e.branding, logo: swap(e.branding.logo) ?? e.branding.logo },
+      branding: { ...e.branding, logo: swap(e.branding.logo) ?? e.branding.logo, partnerLogo: swap(e.branding.partnerLogo) },
       prizes: e.prizes.map((p) => ({ ...p, image: swap(p.image) })),
     }
   }

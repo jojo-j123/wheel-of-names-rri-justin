@@ -8,7 +8,44 @@ export function BrandingEditor({ value, onChange }: { value: Branding; onChange(
   const set = <K extends keyof Branding>(k: K, v: Branding[K]) => onChange({ ...value, [k]: v })
   return (
     <div className="space-y-6">
-      <LogoUploader logo={value.logo} companyName={value.companyName} onChange={(logo) => set('logo', logo)} />
+      <LogoUploader logo={value.logo} companyName={value.companyName} onChange={(logo) => set('logo', logo ?? value.logo)} />
+      <div className="space-y-4 rounded-2xl border border-line bg-field p-4">
+        <LogoUploader
+          kind="partner"
+          logo={value.partnerLogo}
+          companyName={value.partnerName || 'Partner'}
+          onChange={(partnerLogo) => onChange({ ...value, partnerLogo, hubLogo: partnerLogo ? value.hubLogo : 'main' })}
+        />
+        {value.partnerLogo && (
+          <>
+            <TextInput label="Partner name" value={value.partnerName ?? ''} onChange={(e) => set('partnerName', e.target.value)} placeholder="e.g. Acme Corp" maxLength={60} />
+            <div>
+              <p className="mb-2 text-sm font-semibold">Logo in the centre of the wheel</p>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Logo in the centre of the wheel">
+                {(
+                  [
+                    { v: 'main', label: `${value.companyName || 'RRI'} logo` },
+                    { v: 'partner', label: `${value.partnerName || 'Partner'} logo` },
+                  ] as const
+                ).map((o) => {
+                  const active = (value.hubLogo ?? 'main') === o.v
+                  return (
+                    <button
+                      key={o.v}
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => set('hubLogo', o.v)}
+                      className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${active ? 'border-brand bg-brand text-on-brand' : 'border-line bg-field hover:border-ink/25'}`}
+                    >
+                      {o.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
       <div>
         <p className="mb-2 text-sm font-semibold">Big-screen look</p>
         <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Big-screen look">

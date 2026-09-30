@@ -51,6 +51,11 @@ export interface Branding {
   textColor: string
   /** Big-screen look: dark (default, best for projectors/LED walls) or light (bright daylight venues). */
   stageTheme: StageTheme
+  /** Optional second logo for co-branded events ("RRI × Client"). Data URL or URL. */
+  partnerLogo?: string
+  partnerName?: string
+  /** Which logo sits in the centre of the wheel. */
+  hubLogo?: 'main' | 'partner'
 }
 
 export type StageTheme = 'dark' | 'light'

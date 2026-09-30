@@ -13,6 +13,17 @@ describe('import / export', () => {
     expect(back).toEqual(e)
   })
 
+  it('round-trips a co-branded event (partner logo, name, wheel-centre choice)', () => {
+    const e = createDemoEvent()
+    e.branding = { ...e.branding, partnerLogo: 'data:image/png;base64,AAAA', partnerName: 'Acme Corp', hubLogo: 'partner' }
+    const back = eventFromJson(eventToJson(e))
+    expect(back.branding).toMatchObject({ partnerLogo: 'data:image/png;base64,AAAA', partnerName: 'Acme Corp', hubLogo: 'partner' })
+    // A bad partner logo is dropped entirely instead of breaking the event.
+    const bad = eventFromJson(JSON.stringify({ ...e, branding: { ...e.branding, partnerLogo: 'javascript:alert(1)' } }))
+    expect(bad.branding.partnerLogo).toBeUndefined()
+    expect(bad.branding.hubLogo).toBeUndefined()
+  })
+
   it('accepts a bare event object too', () => {
     const e = createDemoEvent()
     expect(eventFromJson(JSON.stringify(e)).id).toBe(e.id)
