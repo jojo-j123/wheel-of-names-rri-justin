@@ -10,12 +10,13 @@ export interface WheelColors {
   accent: string
 }
 
-export type LabelTier = 'full' | 'compact' | 'none'
+export type LabelTier = 'full' | 'compact' | 'micro'
 
+/** 1–30 readable labels · 31–100 compact labels · 101+ fine print on every slice (read through the lens). */
 export function labelTier(count: number): LabelTier {
   if (count <= 30) return 'full'
   if (count <= 100) return 'compact'
-  return 'none'
+  return 'micro'
 }
 
 /** Number of rim pegs (= tick points). Every boundary for small wheels, virtual pegs for big ones. */
@@ -33,7 +34,8 @@ export function segmentColor(i: number, count: number, palette: string[]): strin
     const bandSize = Math.ceil(count / 24)
     const band = Math.floor(i / bandSize)
     const base = palette[band % palette.length]
-    return i % 2 ? mix(base, '#000000', 0.12) : base
+    // Strong alternation so every slice stays distinguishable, even at 1,000 names.
+    return i % 2 ? mix(base, '#000000', 0.3) : base
   }
   const k = palette.length
   if (count > 1 && i === count - 1 && (count - 1) % k === 0) return palette[2 % k]
@@ -123,7 +125,24 @@ export function renderFace(canvas: HTMLCanvasElement, size: number, names: strin
 
   // Labels.
   const tier = labelTier(N)
-  if (tier !== 'none') {
+  if (tier === 'micro') {
+    // Fine print: every slice carries its name, sized to the slice width near the rim.
+    const labelR = R * 0.965
+    const maxW = R * 0.46
+    const fontPx = labelR * 0.8 * seg * 0.82 // glyph height ≈ slice width near the inner end of the text
+    if (fontPx >= 2.2) {
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
+      ctx.font = `600 ${fontPx}px ${FONT_STACK}`
+      for (let i = 0; i < N; i++) {
+        ctx.save()
+        ctx.rotate(TOP + (i + 0.5) * seg)
+        ctx.fillStyle = readableTextOn(segmentColor(i, N, palette))
+        ctx.fillText(fitText(ctx, names[i], maxW), labelR, 0)
+        ctx.restore()
+      }
+    }
+  } else {
     const labelR = R * 0.9
     const maxW = R * (tier === 'full' ? 0.6 : 0.55)
     const arcH = labelR * 0.55 * seg // usable height near the inner end of the label
@@ -266,5 +285,110 @@ export function drawHighlight(ctx: CanvasRenderingContext2D, r: number, count: n
   ctx.lineWidth = Math.max(2, r * 0.008)
   ctx.strokeStyle = `rgba(255,255,255,${0.85 * strength})`
   ctx.stroke()
+  ctx.restore()
+}
+
+/** Magnifier geometry — shared by drawing and tests. */
+export function lensGeometry(r: number, count: number) {
+  const R = r * 0.94
+  const lensR = r * 0.22
+  const cy = -R * 0.78 // lens centre (canvas origin = wheel centre, y up is negative)
+  const rhoP = -cy
+  const visible = 5 // slices across the lens
+  const seg = (Math.PI * 2) / count
+  const k = (2 * lensR) / (visible * rhoP * seg)
+  return { R, lensR, cy, rhoP, visible, seg, k, show: count > 30 && k >= 1.6 }
+}
+
+/**
+ * Magnifier lens at the pointer: redraws the slices around the pointer as vectors at k× zoom,
+ * so names stay crisp and readable even with 1,000 names on the wheel.
+ */
+export function drawLens(ctx: CanvasRenderingContext2D, r: number, names: string[], colors: WheelColors, rotationDeg: number, pointerIndex: number) {
+  const N = names.length
+  const g = lensGeometry(r, N)
+  if (!g.show) return
+  const { lensR, cy, rhoP, seg, k } = g
+  const palette = segmentPalette(colors)
+  ctx.save()
+  // Drop shadow under the glass.
+  ctx.beginPath()
+  ctx.arc(0, cy, lensR, 0, Math.PI * 2)
+  ctx.shadowColor = 'rgba(0,0,0,0.55)'
+  ctx.shadowBlur = r * 0.05
+  ctx.shadowOffsetY = r * 0.012
+  ctx.fillStyle = colors.secondary
+  ctx.fill()
+  ctx.shadowColor = 'transparent'
+  ctx.clip()
+  // Zoom around the lens centre, then draw in wheel coordinates.
+  ctx.translate(0, cy)
+  ctx.scale(k, k)
+  ctx.translate(0, -cy)
+  ctx.rotate((rotationDeg * Math.PI) / 180)
+  const band = (lensR * 1.5) / k
+  const inner = rhoP - band
+  const outer = rhoP + band
+  const m = Math.ceil(g.visible / 2) + 2
+  const rot = (rotationDeg * Math.PI) / 180
+  for (let d = -m; d <= m; d++) {
+    const i = (((pointerIndex + d) % N) + N) % N
+    const a0 = TOP + i * seg
+    const bg = segmentColor(i, N, palette)
+    ctx.beginPath()
+    ctx.arc(0, 0, outer, a0, a0 + seg)
+    ctx.arc(0, 0, inner, a0 + seg, a0, true)
+    ctx.closePath()
+    ctx.fillStyle = bg
+    ctx.fill()
+    ctx.lineWidth = (r * 0.004) / k
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)'
+    ctx.stroke()
+  }
+  // Names: drawn un-zoomed at their final size so glyphs stay crisp.
+  ctx.restore()
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(0, cy, lensR, 0, Math.PI * 2)
+  ctx.clip()
+  const fontPx = rhoP * seg * k * 0.5
+  const maxW = 2 * lensR * 0.86
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = `700 ${fontPx}px ${FONT_STACK}`
+  for (let d = -m; d <= m; d++) {
+    const i = (((pointerIndex + d) % N) + N) % N
+    const theta = rot + TOP + (i + 0.5) * seg
+    // Point on the slice centre line at the lens radius, mapped through the zoom around (0, cy).
+    const x = k * (Math.cos(theta) * rhoP)
+    const y = cy + k * (Math.sin(theta) * rhoP - cy)
+    ctx.save()
+    ctx.translate(x, y)
+    ctx.rotate(theta)
+    ctx.fillStyle = readableTextOn(segmentColor(i, N, palette))
+    ctx.fillText(fitText(ctx, names[i], maxW), 0, 0)
+    ctx.restore()
+  }
+  ctx.restore()
+  // Glass rim + highlight.
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(0, cy, lensR, 0, Math.PI * 2)
+  ctx.lineWidth = r * 0.014
+  ctx.strokeStyle = mix(colors.accent, '#ffffff', 0.35)
+  ctx.stroke()
+  ctx.lineWidth = r * 0.004
+  ctx.strokeStyle = 'rgba(0,0,0,0.45)'
+  ctx.beginPath()
+  ctx.arc(0, cy, lensR - r * 0.009, 0, Math.PI * 2)
+  ctx.stroke()
+  const glare = ctx.createRadialGradient(-lensR * 0.35, cy - lensR * 0.45, 0, -lensR * 0.35, cy - lensR * 0.45, lensR * 1.1)
+  glare.addColorStop(0, 'rgba(255,255,255,0.22)')
+  glare.addColorStop(0.45, 'rgba(255,255,255,0.04)')
+  glare.addColorStop(1, 'rgba(255,255,255,0)')
+  ctx.beginPath()
+  ctx.arc(0, cy, lensR, 0, Math.PI * 2)
+  ctx.fillStyle = glare
+  ctx.fill()
   ctx.restore()
 }
