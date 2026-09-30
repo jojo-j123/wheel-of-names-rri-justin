@@ -18,7 +18,7 @@ The first launch creates a **demo event** (30 names and 6 prizes, marked "Demo d
 
 1. Open the app. The **live wheel** is the main screen.
 2. Click **ADMIN** (top right).
-3. **Participants**: add people one at a time, paste a list of names or import a CSV/TXT file.
+3. **Participants**: add people one at a time, paste names (straight from Excel/Word too) or import an **Excel (.xlsx), Word (.docx), CSV, TXT or JSON** file. The name column is detected automatically.
 4. **Prizes**: add each prize with a photo and a quantity.
 5. **Branding** (optional): RRI's logo and colours are already set.
 6. **Draw settings**: pick Standard, Dramatic or Grand Prize. You can also turn sound, confetti and winner removal on or off here.

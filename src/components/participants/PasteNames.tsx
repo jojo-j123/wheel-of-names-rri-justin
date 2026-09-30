@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { parseNameLines } from '../../lib/csv/participantsCsv'
+import { parsePastedNames } from '../../lib/csv/participantsCsv'
 import { duplicateKey } from '../../lib/event/operations'
 import { plural } from '../../lib/format'
 import { Button } from '../common/Button'
@@ -16,7 +16,7 @@ interface Props {
 
 export function PasteNames({ open, onClose, existingNames, preventDuplicates, onAdd }: Props) {
   const [text, setText] = useState('')
-  const names = useMemo(() => parseNameLines(text), [text])
+  const names = useMemo(() => parsePastedNames(text), [text])
   const existing = useMemo(() => new Set(existingNames.map(duplicateKey)), [existingNames])
   const dupes = names.filter((n) => existing.has(duplicateKey(n))).length
   const willAdd = preventDuplicates ? new Set(names.map(duplicateKey).filter((k) => !existing.has(k))).size : names.length
@@ -29,7 +29,7 @@ export function PasteNames({ open, onClose, existingNames, preventDuplicates, on
       open={open}
       onClose={close}
       title="Paste participant names"
-      description="Paste or type one name per line. You can copy a column straight from Excel or Google Sheets."
+      description="Paste or type one name per line. You can copy straight from Excel, Google Sheets or Word — if you copy several columns, we find the names."
       size="lg"
       footer={
         <>

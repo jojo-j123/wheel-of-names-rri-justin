@@ -142,7 +142,7 @@ export function ParticipantsPage() {
           Add participant
         </Button>
         <Button size="lg" icon={<FileUp size={20} />} onClick={() => setImportOpen(true)}>
-          Import CSV / TXT
+          Import Excel / Word / CSV
         </Button>
         <Button size="lg" icon={<ClipboardPaste size={20} />} onClick={() => setPasteOpen(true)}>
           Paste names

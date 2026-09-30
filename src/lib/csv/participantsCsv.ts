@@ -38,16 +38,46 @@ export function parseNameLines(text: string): string[] {
 }
 
 export function parseCsvText(text: string): ParsedTable {
-  const res = Papa.parse<string[]>(text.replace(/^﻿/, ''), { skipEmptyLines: 'greedy' })
-  const all = (res.data as unknown[]).filter(Array.isArray).map((r) => (r as unknown[]).map((c) => String(c ?? '').trim()))
+  const res = Papa.parse<string[]>(text.replace(/^\uFEFF/, ''), { skipEmptyLines: 'greedy' })
+  return tableFromRows((res.data as unknown[]).filter(Array.isArray) as unknown[][])
+}
+
+/** Build a table (header detection + column mapping) from raw rows of any source: CSV, Excel, Word, JSON… */
+export function tableFromRows(input: unknown[][]): ParsedTable {
+  const all = input
+    .map((r) => r.map((c) => cellToString(c)))
+    .filter((r) => r.some((c) => c !== ''))
   if (!all.length) return { headers: [], rows: [], hasHeader: false, mapping: emptyMapping() }
+  // Drop columns that are empty in every row (common in spreadsheets and Word tables).
   const width = Math.max(...all.map((r) => r.length))
-  const norm = all.map((r) => (r.length < width ? [...r, ...Array(width - r.length).fill('')] : r))
+  const keep = Array.from({ length: width }, (_, i) => i).filter((i) => all.some((r) => (r[i] ?? '') !== ''))
+  const norm = all.map((r) => keep.map((i) => r[i] ?? ''))
   const first = norm[0]
   const hasHeader = first.some((c) => NAME_LOOSE_RE.test(c) || FIRST_RE.test(c) || EMAIL_RE.test(c) || PHONE_RE.test(c)) && !first.some(looksEmail)
   const headers = hasHeader ? first.map((h, i) => h || `Column ${i + 1}`) : first.map((_, i) => `Column ${i + 1}`)
   const rows = hasHeader ? norm.slice(1) : norm
   return { headers, rows, hasHeader, mapping: detectMapping(headers, rows, hasHeader) }
+}
+
+export function cellToString(c: unknown): string {
+  if (c === null || c === undefined) return ''
+  if (c instanceof Date) return Number.isNaN(c.getTime()) ? '' : c.toISOString().slice(0, 10)
+  if (typeof c === 'number') return Number.isInteger(c) ? String(c) : String(c)
+  if (typeof c === 'object') return ''
+  return String(c).replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Pasted text: one name per line. If it was copied from Excel/Sheets with several columns
+ * (tab-separated), the name column is detected automatically.
+ */
+export function parsePastedNames(text: string): string[] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim())
+  if (lines.some((l) => l.includes('\t'))) {
+    const t = tableFromRows(lines.map((l) => l.split('\t')))
+    if (t.mapping.name !== null) return buildParticipantsFromTable(t, t.mapping).map((p) => p.name)
+  }
+  return parseNameLines(text)
 }
 
 function emptyMapping(): ColumnMapping {

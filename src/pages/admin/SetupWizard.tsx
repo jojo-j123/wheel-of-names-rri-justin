@@ -11,7 +11,7 @@ import { TextArea, TextInput } from '../../components/common/Form'
 import { ParticipantImporter } from '../../components/participants/ParticipantImporter'
 import { PrizeEditor } from '../../components/prizes/PrizeEditor'
 import { usePresent } from '../../hooks/usePresent'
-import { parseNameLines } from '../../lib/csv/participantsCsv'
+import { parsePastedNames } from '../../lib/csv/participantsCsv'
 import { createEmptyEvent } from '../../lib/event/defaults'
 import { BUILT_IN_TEMPLATES } from '../../lib/event/demo'
 import { addParticipants, addPrize, cleanName, eventFromTemplate, FriendlyError, removePrize } from '../../lib/event/operations'
@@ -46,7 +46,7 @@ export function SetupWizardPage() {
   }
 
   const addPasted = () => {
-    const names = parseNameLines(paste)
+    const names = parsePastedNames(paste)
     if (!names.length) return
     const r = addParticipants(draft, names.map((name) => ({ name })), { preventDuplicates: draft.wheelSettings.preventDuplicates })
     setDraft(r.event)
@@ -129,11 +129,11 @@ export function SetupWizardPage() {
               <div className="mt-6 space-y-4">
                 <TextArea label="Paste names (one per line)" rows={8} value={paste} onChange={(e) => setPaste(e.target.value)} placeholder={'John Doe\nJane Smith\nAhmed Ali'} />
                 <div className="flex flex-wrap gap-3">
-                  <Button variant="primary" icon={<Plus size={18} />} disabled={!parseNameLines(paste).length} onClick={addPasted}>
-                    Add {plural(parseNameLines(paste).length, 'name')}
+                  <Button variant="primary" icon={<Plus size={18} />} disabled={!parsePastedNames(paste).length} onClick={addPasted}>
+                    Add {plural(parsePastedNames(paste).length, 'name')}
                   </Button>
                   <Button icon={<FileUp size={18} />} onClick={() => setImportOpen(true)}>
-                    Import CSV / TXT
+                    Import Excel / Word / CSV
                   </Button>
                   {draft.participants.length > 0 && (
                     <Button variant="ghost" icon={<Trash2 size={16} />} onClick={() => setDraft({ ...draft, participants: [] })}>
