@@ -7,7 +7,7 @@ import { useDrawController } from '../../hooks/useDrawController'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { useFullscreen } from '../../hooks/useFullscreen'
 import { sound } from '../../lib/audio/soundEngine'
-import { brandCssVars, mix, rgba } from '../../lib/branding'
+import { brandCssVars, mix, rgba, stagePalette } from '../../lib/branding'
 import { getActivePrize, getEligibleParticipants, nextPrizeWithStock, prizeRemaining, setActivePrize } from '../../lib/event/operations'
 import { n } from '../../lib/format'
 import { useApp } from '../../store/appStore'
@@ -45,6 +45,7 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
   const fs = useFullscreen()
   const { phase, current, wheelList, batch, locked } = useDraw()
   const b = event.branding
+  const sp = stagePalette(b)
 
   useEffect(() => {
     sound.enabled = event.wheelSettings.sound
@@ -131,11 +132,14 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
 
   return (
     <div
-      className={`stage-grain relative flex flex-col text-white ${presentation ? 'h-dvh overflow-hidden' : 'min-h-dvh overflow-x-hidden wide:h-dvh wide:overflow-hidden'}`}
+      className={`stage-grain relative flex flex-col text-fg ${presentation ? 'h-dvh overflow-hidden' : 'min-h-dvh overflow-x-hidden wide:h-dvh wide:overflow-hidden'}`}
       style={{
         ...(brandCssVars(b) as React.CSSProperties),
-        color: b.textColor,
-        background: `radial-gradient(ellipse 70% 60% at 70% 55%, ${rgba(b.primaryColor, 0.16)} 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 10% 0%, ${rgba(b.accentColor, 0.08)} 0%, transparent 60%), linear-gradient(180deg, ${mix(b.backgroundColor, '#ffffff', 0.03)} 0%, ${b.backgroundColor} 100%)`,
+        ['--stage-fg' as string]: sp.fg,
+        ['--stage-bg' as string]: sp.bg,
+        ['--stage-bar' as string]: sp.bar,
+        color: sp.text,
+        background: `radial-gradient(ellipse 70% 60% at 70% 55%, ${rgba(b.primaryColor, sp.glow)} 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 10% 0%, ${rgba(b.accentColor, sp.glow / 2)} 0%, transparent 60%), linear-gradient(180deg, ${mix(sp.bg, '#ffffff', 0.03)} 0%, ${sp.bg} 100%)`,
       }}
     >
       {/* Header */}
@@ -143,16 +147,16 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
         <div className={`flex min-w-0 items-center gap-[clamp(10px,1.2vw,20px)] ${presentation ? 'flex-col wide:flex-row' : ''}`}>
           <BrandLogo logo={b.logo} companyName={b.companyName} variant="badge" className={`shrink-0 shadow-[0_8px_24px_rgba(0,0,0,0.45)] ${presentation ? 'h-[clamp(48px,7vh,96px)] w-[clamp(48px,7vh,96px)]' : 'h-12 w-12'}`} />
           <div className={`min-w-0 ${presentation ? 'text-center wide:text-left' : ''}`}>
-            <p className="stage-kicker truncate text-[clamp(0.65rem,1.1vh,0.9rem)] text-white/55">{b.companyName} presents</p>
+            <p className="stage-kicker truncate text-[clamp(0.65rem,1.1vh,0.9rem)] text-fg/55">{b.companyName} presents</p>
             <h1 className={`truncate font-display font-semibold tracking-tight ${presentation ? 'text-[clamp(1.4rem,3.6vh,3.2rem)]' : 'text-xl sm:text-2xl'}`}>{event.eventName}</h1>
           </div>
         </div>
         {!presentation && (
           <div className="flex items-center gap-2">
-            {event.isDemo && <span className="hidden rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/70 ring-1 ring-white/10 sm:inline">Demo data</span>}
+            {event.isDemo && <span className="hidden rounded-full bg-fg/10 px-3 py-1 text-xs font-semibold text-fg/70 ring-1 ring-fg/10 sm:inline">Demo data</span>}
             <Link
               to="/admin"
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-white/6 px-4 text-sm font-semibold tracking-wide text-white/70 ring-1 ring-white/10 transition hover:bg-white/12 hover:text-white"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-fg/6 px-4 text-sm font-semibold tracking-wide text-fg/70 ring-1 ring-fg/10 transition hover:bg-fg/12 hover:text-fg"
             >
               <Settings2 size={16} /> ADMIN
             </Link>
@@ -186,23 +190,23 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
           <div className="h-[clamp(28px,4vh,48px)]" aria-hidden={!spinning}>
             <motion.div
               animate={{ opacity: spinning ? 1 : 0, y: spinning ? 0 : 6 }}
-              className="rounded-full bg-white/8 px-5 py-1.5 font-display text-[clamp(1rem,2.4vh,1.8rem)] font-semibold ring-1 ring-white/12"
+              className="rounded-full bg-fg/8 px-5 py-1.5 font-display text-[clamp(1rem,2.4vh,1.8rem)] font-semibold ring-1 ring-fg/12"
             >
               <span ref={liveNameRef} />
             </motion.div>
           </div>
           <SpinButton phase={phase} locked={locked} disabled={!!blocker && !pendingBatch} label={spinLabel} color={b.primaryColor} size={presentation ? 'lg' : 'md'} onSpin={ctrl.spin} />
-          <p className="tabular text-center text-[clamp(0.8rem,1.5vh,1.15rem)] text-white/55">
+          <p className="tabular text-center text-[clamp(0.8rem,1.5vh,1.15rem)] text-fg/55">
             {blocker && phase === 'IDLE' && !pendingBatch ? (
               <span className="flex flex-col items-center gap-3">
-                <span className="text-white/80">{blocker}</span>
+                <span className="text-fg/80">{blocker}</span>
                 {prize && remaining <= 0 && nextPrize && !locked && (
                   <button
                     onClick={(e) => {
                       goToNextPrize()
                       e.currentTarget.blur()
                     }}
-                    className="rounded-full bg-white/10 px-5 py-2 text-sm font-semibold text-white ring-1 ring-white/15 transition hover:bg-white/16"
+                    className="rounded-full bg-fg/10 px-5 py-2 text-sm font-semibold text-fg ring-1 ring-fg/15 transition hover:bg-fg/16"
                   >
                     Next prize: {nextPrize.name} →
                   </button>
@@ -210,11 +214,11 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
               </span>
             ) : (
               <>
-                <span className="font-semibold text-white/85">{n(event.participants.length)}</span> participants
+                <span className="font-semibold text-fg/85">{n(event.participants.length)}</span> participants
                 {eligible.length !== event.participants.length && (
                   <>
                     {' · '}
-                    <span className="font-semibold text-white/85">{n(eligible.length)}</span> in the draw
+                    <span className="font-semibold text-fg/85">{n(eligible.length)}</span> in the draw
                   </>
                 )}
               </>

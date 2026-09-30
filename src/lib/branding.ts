@@ -12,6 +12,7 @@ export const DEFAULT_BRANDING: Branding = {
   accentColor: '#E9C893',
   backgroundColor: '#0E0B0B',
   textColor: '#FFFFFF',
+  stageTheme: 'dark',
 }
 
 export const COLOR_PRESETS: { name: string; colors: Pick<Branding, 'primaryColor' | 'secondaryColor' | 'accentColor' | 'backgroundColor'> }[] = [
@@ -64,6 +65,14 @@ export function readableTextOn(hex: string): string {
 }
 
 /** CSS variables applied at the root of stage/admin so every component follows the brand. */
+/** Colors for the live stage in the chosen big-screen look. */
+export function stagePalette(b: Branding) {
+  if (b.stageTheme === 'light') {
+    return { bg: '#F6F2EE', text: '#1A1616', fg: '#1A1616', bar: 'rgba(255,255,255,0.7)', glow: 0.1 }
+  }
+  return { bg: b.backgroundColor, text: b.textColor, fg: '#FFFFFF', bar: 'rgba(0,0,0,0.35)', glow: 0.16 }
+}
+
 export function brandCssVars(b: Branding): Record<string, string> {
   return {
     '--brand-primary': b.primaryColor,

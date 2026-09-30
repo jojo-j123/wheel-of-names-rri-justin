@@ -12,10 +12,10 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary: 'bg-brand text-on-brand shadow-[0_8px_20px_-8px_var(--brand-primary)] hover:brightness-110 active:brightness-95',
-  secondary: 'bg-card text-ink border border-line shadow-card hover:border-ink/25 hover:bg-white',
+  secondary: 'bg-card text-ink border border-line shadow-card hover:border-ink/25 hover:bg-field',
   ghost: 'text-ink-soft hover:bg-ink/5',
   danger: 'bg-danger text-white hover:brightness-110 shadow-[0_8px_20px_-10px_#c62f2f]',
-  dark: 'bg-ink text-white hover:bg-ink-soft',
+  dark: 'bg-inverse text-white hover:brightness-125',
 }
 
 const sizes: Record<Size, string> = {

@@ -13,7 +13,7 @@ interface Props {
   onImport(people: ParticipantInput[]): void
 }
 
-const selectCls = 'h-12 w-full rounded-xl border border-line bg-white px-3 font-semibold outline-none focus:border-brand focus:ring-4 focus:ring-brand/15'
+const selectCls = 'h-12 w-full rounded-xl border border-line bg-field px-3 font-semibold outline-none focus:border-brand focus:ring-4 focus:ring-brand/15'
 
 export function ParticipantImporter({ open, onClose, onImport }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)

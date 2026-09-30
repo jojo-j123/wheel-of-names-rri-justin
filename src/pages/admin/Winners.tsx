@@ -78,7 +78,7 @@ export function WinnersPage() {
             value={prizeFilter}
             onChange={(e) => setPrizeFilter(e.target.value)}
             aria-label="Filter by prize"
-            className="h-11 rounded-xl border border-line bg-white px-3 text-[15px] font-semibold outline-none focus:border-brand"
+            className="h-11 rounded-xl border border-line bg-field px-3 text-[15px] font-semibold outline-none focus:border-brand"
           >
             <option value="">All prizes</option>
             {prizeNames.map((p) => (

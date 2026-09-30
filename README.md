@@ -20,7 +20,7 @@ The first launch creates a **demo event** (30 names and 6 prizes, marked "Demo d
 2. Click **ADMIN** (top right).
 3. **Participants**: add people one at a time, paste names (straight from Excel/Word too) or import an **Excel (.xlsx), Word (.docx), CSV, TXT or JSON** file. The name column is detected automatically.
 4. **Prizes**: add each prize with a photo and a quantity.
-5. **Branding** (optional): RRI's logo and colours are already set.
+5. **Branding** (optional): RRI's logo and colours are already set. Choose the **Big-screen look**: Dark (projectors, LED walls) or Light (bright daytime rooms).
 6. **Draw settings**: pick Standard, Dramatic or Grand Prize. You can also turn sound, confetti and winner removal on or off here.
 7. Pick the prize under **Choose the prize**, then click **START PRESENTATION**.
 8. Press **Space** (or click **SPIN**).

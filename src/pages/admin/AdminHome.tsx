@@ -75,7 +75,7 @@ export function AdminHome() {
         ))}
       </div>
 
-      <div className="rounded-[32px] bg-ink p-6 text-white sm:p-10">
+      <div className="rounded-[32px] bg-inverse p-6 text-white ring-1 ring-line sm:p-10">
         <div className="flex flex-col items-center gap-5 text-center">
           <h2 className="font-display text-2xl font-semibold sm:text-3xl">Ready for the audience?</h2>
           <p className="max-w-lg text-white/65">Opens the full-screen live view. Admin controls are hidden from the audience. Press Space to spin.</p>

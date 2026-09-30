@@ -4,6 +4,10 @@ import '@fontsource-variable/inter'
 import '@fontsource-variable/sora'
 import './index.css'
 import App from './App.tsx'
+import { applyAppearance, watchSystemAppearance } from './lib/theme'
+
+applyAppearance()
+watchSystemAppearance()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

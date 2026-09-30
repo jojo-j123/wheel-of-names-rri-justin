@@ -131,7 +131,7 @@ export function SetupWizardPage() {
             <div className="flex flex-col items-center gap-1.5">
               <span
                 aria-current={i === step ? 'step' : undefined}
-                className={`grid h-10 w-10 place-items-center rounded-full font-display font-semibold transition ${i < step ? 'bg-brand text-on-brand' : i === step ? 'bg-ink text-white ring-4 ring-ink/10' : 'bg-ink/8 text-muted'}`}
+                className={`grid h-10 w-10 place-items-center rounded-full font-display font-semibold transition ${i < step ? 'bg-brand text-on-brand' : i === step ? 'bg-inverse text-white ring-4 ring-ink/10' : 'bg-ink/8 text-muted'}`}
               >
                 {i < step ? <Check size={18} /> : i + 1}
               </span>
@@ -157,7 +157,7 @@ export function SetupWizardPage() {
                       <button
                         key={t.id || 'blank'}
                         onClick={() => chooseTemplate(t.id)}
-                        className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition ${templateId === t.id ? 'border-brand bg-brand/[0.05] ring-4 ring-brand/12' : 'border-line bg-white hover:border-ink/25'}`}
+                        className={`rounded-xl border px-4 py-3 text-left text-sm font-semibold transition ${templateId === t.id ? 'border-brand bg-brand/[0.05] ring-4 ring-brand/12' : 'border-line bg-field hover:border-ink/25'}`}
                       >
                         {t.name}
                       </button>
@@ -205,7 +205,7 @@ export function SetupWizardPage() {
               <p className="mt-1 text-muted">Add prizes with photos. You can skip this and spin just for names.</p>
               <div className="mt-6 space-y-2">
                 {draft.prizes.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3 rounded-2xl border border-line bg-white p-3">
+                  <div key={p.id} className="flex items-center gap-3 rounded-2xl border border-line bg-field p-3">
                     <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand/10 text-brand">
                       {p.image ? <img src={p.image} alt="" className="h-full w-full object-cover" /> : <Gift size={20} />}
                     </div>

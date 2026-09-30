@@ -17,7 +17,7 @@ export function PrizeCard({ prize, remaining, active, preview, onEdit, onDelete,
   const statusCls = !prize.enabled ? 'bg-ink/8 text-muted' : remaining <= 0 ? 'bg-ink/8 text-muted' : active ? 'bg-brand text-on-brand' : 'bg-success/12 text-success'
   return (
     <div className={`group flex flex-col overflow-hidden rounded-3xl border bg-card shadow-card transition ${active ? 'border-brand ring-4 ring-brand/15' : 'border-line'} ${!prize.enabled ? 'opacity-70' : ''}`}>
-      <div className="relative aspect-[4/3] overflow-hidden bg-ink">
+      <div className="relative aspect-[4/3] overflow-hidden bg-[#1a1616]">
         {prize.image ? (
           <img src={prize.image} alt={prize.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
         ) : (

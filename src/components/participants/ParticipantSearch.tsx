@@ -10,7 +10,7 @@ export function ParticipantSearch({ value, onChange, placeholder = 'Search names
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="h-11 w-full rounded-xl border border-line bg-white pl-10 pr-10 text-[15px] outline-none focus:border-brand focus:ring-4 focus:ring-brand/15 [&::-webkit-search-cancel-button]:hidden"
+        className="h-11 w-full rounded-xl border border-line bg-field pl-10 pr-10 text-[15px] outline-none focus:border-brand focus:ring-4 focus:ring-brand/15 [&::-webkit-search-cancel-button]:hidden"
       />
       {value && (
         <button onClick={() => onChange('')} aria-label="Clear search" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-muted hover:bg-ink/5">

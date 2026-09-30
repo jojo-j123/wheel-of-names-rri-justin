@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { Branding } from '../../types'
-import { mix, rgba } from '../../lib/branding'
+import { mix, rgba, stagePalette } from '../../lib/branding'
 import { renderFace } from '../../lib/wheel/renderer'
 import { DEMO_NAMES } from '../../lib/event/demo'
 import { BrandLogo } from './BrandLogo'
@@ -13,12 +13,13 @@ export function BrandPreview({ branding, eventName }: { branding: Branding; even
     if (!c) return
     renderFace(c, 440, DEMO_NAMES.slice(0, 12), { primary: branding.primaryColor, secondary: branding.secondaryColor, accent: branding.accentColor })
   }, [branding.primaryColor, branding.secondaryColor, branding.accentColor])
+  const sp = stagePalette(branding)
   return (
     <div
       className="relative overflow-hidden rounded-3xl p-6 shadow-lift"
       style={{
-        color: branding.textColor,
-        background: `radial-gradient(ellipse 80% 60% at 70% 60%, ${rgba(branding.primaryColor, 0.2)}, transparent 60%), linear-gradient(180deg, ${mix(branding.backgroundColor, '#ffffff', 0.04)}, ${branding.backgroundColor})`,
+        color: sp.text,
+        background: `radial-gradient(ellipse 80% 60% at 70% 60%, ${rgba(branding.primaryColor, sp.glow + 0.04)}, transparent 60%), linear-gradient(180deg, ${mix(sp.bg, '#ffffff', 0.04)}, ${sp.bg})`,
       }}
     >
       <div className="flex items-center gap-3">

@@ -1,4 +1,4 @@
-import { Lock, OctagonX, RotateCcw, Undo2, Unlock, Volume2, VolumeX, MonitorPlay } from 'lucide-react'
+import { Lock, Moon, OctagonX, RotateCcw, Sun, Undo2, Unlock, Volume2, VolumeX, MonitorPlay } from 'lucide-react'
 import type { AnimationMode, EventData, WinnersPerDraw } from '../../types'
 import type { DrawController } from '../../hooks/useDrawController'
 import { prizeRemaining, setActivePrize } from '../../lib/event/operations'
@@ -23,7 +23,7 @@ function IconBtn({ label, onClick, children, active, danger, disabled }: { label
       title={label}
       aria-label={label}
       className={`inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold transition disabled:opacity-35 ${
-        danger ? 'bg-[#c62f2f] text-white hover:brightness-110' : active ? 'bg-white text-ink' : 'bg-white/8 text-white/80 ring-1 ring-white/10 hover:bg-white/14 hover:text-white'
+        danger ? 'bg-[#c62f2f] text-white hover:brightness-110' : active ? 'bg-fg text-sbg' : 'bg-fg/8 text-fg/80 ring-1 ring-fg/10 hover:bg-fg/14 hover:text-fg'
       }`}
     >
       {children}
@@ -44,9 +44,9 @@ export function OperatorBar({ event, ctrl, onPresent }: Props) {
   const toggleSound = () => mutate(event.id, (e) => ({ ...e, wheelSettings: { ...e.wheelSettings, sound: !e.wheelSettings.sound } }))
 
   return (
-    <div className="relative z-30 border-t border-white/8 bg-black/35 px-4 py-3 backdrop-blur-md">
+    <div className="relative z-30 border-t border-fg/8 bg-sbar px-4 py-3 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-4 gap-y-3">
-        <label className="flex items-center gap-2 text-sm text-white/60">
+        <label className="flex items-center gap-2 text-sm text-fg/60">
           <span className="font-semibold">Prize</span>
           <select
             value={event.activePrizeId ?? ''}
@@ -55,7 +55,7 @@ export function OperatorBar({ event, ctrl, onPresent }: Props) {
               mutate(event.id, (ev) => setActivePrize(ev, e.target.value || null))
               e.currentTarget.blur()
             }}
-            className="h-10 max-w-[220px] rounded-xl bg-white/8 px-3 font-semibold text-white ring-1 ring-white/10 outline-none disabled:opacity-40 [&>option]:text-ink"
+            className="h-10 max-w-[220px] rounded-xl bg-fg/8 px-3 font-semibold text-fg ring-1 ring-fg/10 outline-none disabled:opacity-40 [&>option]:bg-white [&>option]:text-[#1a1616]"
           >
             <option value="">No prize</option>
             {event.prizes
@@ -68,7 +68,7 @@ export function OperatorBar({ event, ctrl, onPresent }: Props) {
           </select>
         </label>
         <div className={`flex items-center gap-2 ${disabledSetup ? 'pointer-events-none opacity-40' : ''}`}>
-          <span className="text-sm font-semibold text-white/60">Style</span>
+          <span className="text-sm font-semibold text-fg/60">Style</span>
           <Segmented<AnimationMode>
             dark
             label="Animation style"
@@ -82,7 +82,7 @@ export function OperatorBar({ event, ctrl, onPresent }: Props) {
           />
         </div>
         <div className={`flex items-center gap-2 ${disabledSetup ? 'pointer-events-none opacity-40' : ''}`}>
-          <span className="text-sm font-semibold text-white/60">Winners</span>
+          <span className="text-sm font-semibold text-fg/60">Winners</span>
           <Segmented<WinnersPerDraw>
             dark
             label="Winners per draw"
@@ -93,6 +93,15 @@ export function OperatorBar({ event, ctrl, onPresent }: Props) {
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          <IconBtn
+            label={event.branding.stageTheme === 'light' ? 'Light screen' : 'Dark screen'}
+            disabled={inDraw}
+            onClick={() =>
+              mutate(event.id, (e) => ({ ...e, branding: { ...e.branding, stageTheme: e.branding.stageTheme === 'light' ? 'dark' : 'light' }, updatedAt: Date.now() }))
+            }
+          >
+            {event.branding.stageTheme === 'light' ? <Sun size={18} /> : <Moon size={18} />}
+          </IconBtn>
           <IconBtn label={event.wheelSettings.sound ? 'Sound on' : 'Sound off'} onClick={toggleSound}>
             {event.wheelSettings.sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </IconBtn>

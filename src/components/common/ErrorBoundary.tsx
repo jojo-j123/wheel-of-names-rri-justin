@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode; label?: stri
         <div className="max-w-md">
           <h2 className="font-display text-2xl font-semibold">Something went wrong{this.props.label ? ` in ${this.props.label}` : ''}.</h2>
           <p className="mt-3 text-muted">Your event data is safe. Reload the page to continue.</p>
-          <button className="mt-6 rounded-xl bg-ink px-5 py-3 font-semibold text-white" onClick={() => location.reload()}>
+          <button className="mt-6 rounded-xl bg-inverse px-5 py-3 font-semibold text-white" onClick={() => location.reload()}>
             Reload
           </button>
         </div>

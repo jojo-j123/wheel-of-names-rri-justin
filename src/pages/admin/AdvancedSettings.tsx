@@ -16,7 +16,7 @@ import { createId } from '../../lib/random/secureRandom'
 
 function Slider({ label, value, min, max, step, unit, onChange, defaultLabel, isDefault, onDefault }: { label: string; value: number; min: number; max: number; step: number; unit: string; onChange(v: number): void; defaultLabel: string; isDefault: boolean; onDefault(): void }) {
   return (
-    <div className="rounded-2xl border border-line bg-white p-5">
+    <div className="rounded-2xl border border-line bg-field p-5">
       <div className="flex items-center justify-between gap-4">
         <label className="font-semibold">{label}</label>
         <span className="tabular font-display text-lg font-semibold">
@@ -84,7 +84,7 @@ export function AdvancedSettingsPage() {
             onChange={(v) => setA({ rotations: v })}
             onDefault={() => setA({ rotations: null })}
           />
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-white px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-field px-5 py-4">
             <div>
               <p className="font-semibold">Reduced motion</p>
               <p className="text-sm text-muted">Shorter spin, fewer effects. “Automatic” follows the computer’s accessibility setting.</p>

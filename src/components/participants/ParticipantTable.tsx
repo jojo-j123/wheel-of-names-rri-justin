@@ -45,7 +45,7 @@ export const ParticipantTable = memo(function ParticipantTable({ rows, selected,
                 <p className="flex items-center gap-2 truncate text-[15px] font-semibold">
                   <span className="truncate">{p.name}</span>
                   {won && (
-                    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${removed.has(p.id) ? 'bg-brand/10 text-brand' : 'bg-amber-100 text-amber-800'}`}>
+                    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${removed.has(p.id) ? 'bg-brand/10 text-brand' : 'bg-amber-100 text-amber-800 dark:bg-amber-400/15 dark:text-amber-300'}`}>
                       <Trophy size={11} /> {removed.has(p.id) ? 'Won' : 'Won · still in'}
                     </span>
                   )}

@@ -7,6 +7,13 @@
     <meta name="theme-color" content="#0E0C0C" />
     <meta name="description" content="RRI Event Wheel — live prize draws for events." />
     <title>RRI Event Wheel</title>
+    <script>
+      // Apply the saved appearance before first paint (no flash of the wrong theme).
+      try {
+        var a = localStorage.getItem('rri-appearance')
+        if (a === 'dark' || (a !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark')
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
