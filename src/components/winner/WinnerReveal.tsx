@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react'
 import type { Branding, DrawPhase } from '../../types'
 import type { BatchState, CurrentDraw } from '../../store/drawStore'
 import { rgba } from '../../lib/branding'
-import { BrandLogo } from '../branding/BrandLogo'
 
 interface Props {
   phase: DrawPhase
@@ -191,10 +190,6 @@ export function WinnerReveal({ phase, current, batch, branding, reduced, onNameR
           </motion.ol>
         )}
 
-        <motion.div {...rise(t.logo)} className="mt-[3vh] flex items-center gap-3 text-white/70">
-          <BrandLogo logo={branding.logo} companyName={branding.companyName} variant="badge" className="h-[clamp(36px,5vh,56px)] w-[clamp(36px,5vh,56px)]" />
-          <span className="stage-kicker text-xs">{branding.companyName}</span>
-        </motion.div>
 
         <div className="mt-[3vh] flex h-12 items-center gap-3">
           <AnimatePresence>
