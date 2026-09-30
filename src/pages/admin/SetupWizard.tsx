@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ChevronLeft, ChevronRight, FileUp, Gift, MonitorPlay, Plus, Trash2, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import type { EventData } from '../../types'
 import { Card } from '../../components/admin/PageHeader'
@@ -13,6 +13,7 @@ import { PrizeEditor } from '../../components/prizes/PrizeEditor'
 import { usePresent } from '../../hooks/usePresent'
 import { parsePastedNames } from '../../lib/csv/participantsCsv'
 import { createEmptyEvent } from '../../lib/event/defaults'
+import { sanitizeEvent } from '../../lib/event/sanitize'
 import { BUILT_IN_TEMPLATES } from '../../lib/event/demo'
 import { addParticipants, addPrize, cleanName, eventFromTemplate, FriendlyError, removePrize } from '../../lib/event/operations'
 import { plural } from '../../lib/format'
@@ -21,18 +22,64 @@ import { toast } from '../../store/toastStore'
 
 const STEPS = ['Event name', 'Participants', 'Prizes', 'Branding', 'Ready']
 
+const WIZARD_KEY = 'rri-setup-wizard'
+
+interface WizardDraft {
+  step: number
+  templateId: string
+  draft: EventData
+}
+
+function loadWizardDraft(templateParam: string | null): WizardDraft | null {
+  try {
+    const raw = sessionStorage.getItem(WIZARD_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw) as { step?: unknown; templateId?: unknown; draft?: { eventName?: unknown } }
+    if (templateParam && data.templateId !== templateParam) return null
+    const draft = sanitizeEvent(data.draft)
+    if (!draft) return null
+    draft.eventName = typeof data.draft?.eventName === 'string' ? data.draft.eventName : ''
+    const step = typeof data.step === 'number' ? Math.max(0, Math.min(3, Math.floor(data.step))) : 0
+    return { step, templateId: typeof data.templateId === 'string' ? data.templateId : '', draft }
+  } catch {
+    return null
+  }
+}
+
+function saveWizardDraft(d: WizardDraft) {
+  try {
+    sessionStorage.setItem(WIZARD_KEY, JSON.stringify(d))
+  } catch {
+    /* storage full or blocked — the wizard still works, it just won't survive a refresh */
+  }
+}
+
+function clearWizardDraft() {
+  try {
+    sessionStorage.removeItem(WIZARD_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
 export function SetupWizardPage() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const present = usePresent()
   const { templates, addEvent } = useApp()
   const allTemplates = useMemo(() => [...templates, ...BUILT_IN_TEMPLATES], [templates])
-  const [templateId, setTemplateId] = useState<string>(params.get('template') ?? '')
-  const [step, setStep] = useState(0)
+  // Wizard progress survives a page refresh (kept in this tab's session storage until the event is created).
+  const [saved] = useState(() => loadWizardDraft(params.get('template')))
+  const [templateId, setTemplateId] = useState<string>(saved?.templateId ?? params.get('template') ?? '')
+  const [step, setStep] = useState(saved?.step ?? 0)
   const [draft, setDraft] = useState<EventData>(() => {
+    if (saved) return saved.draft
     const t = allTemplates.find((x) => x.id === params.get('template'))
     return t ? eventFromTemplate(t, '') : createEmptyEvent('')
   })
+  useEffect(() => {
+    if (step < 4) saveWizardDraft({ step, templateId, draft })
+  }, [step, templateId, draft])
   const [paste, setPaste] = useState('')
   const [importOpen, setImportOpen] = useState(false)
   const [prizeOpen, setPrizeOpen] = useState(false)
@@ -57,6 +104,7 @@ export function SetupWizardPage() {
   const finish = () => {
     const ev: EventData = { ...draft, eventName: cleanName(draft.eventName) || 'My Event', updatedAt: Date.now() }
     addEvent(ev, true)
+    clearWizardDraft()
     setCreatedId(ev.id)
     setStep(4)
   }
@@ -70,7 +118,7 @@ export function SetupWizardPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-8 flex items-center justify-between">
-        <Link to="/admin" className="inline-flex items-center gap-1 text-sm font-semibold text-muted hover:text-ink">
+        <Link to="/admin" onClick={clearWizardDraft} className="inline-flex items-center gap-1 text-sm font-semibold text-muted hover:text-ink">
           <X size={16} /> {createdId ? 'Close' : 'Skip setup'}
         </Link>
         <p className="text-sm font-semibold text-muted">Quick setup</p>

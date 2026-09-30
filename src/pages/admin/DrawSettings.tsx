@@ -7,6 +7,7 @@ import { Button } from '../../components/common/Button'
 import { Toggle } from '../../components/common/Form'
 import { MODE_LABELS } from '../../lib/wheel/timings'
 import { useActiveEvent, useApp } from '../../store/appStore'
+import { useUnsavedWarning } from '../../hooks/useUnsavedWarning'
 import { toast } from '../../store/toastStore'
 
 export function DrawSettingsPage() {
@@ -20,6 +21,7 @@ export function DrawSettingsPage() {
   }, [event.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const set = <K extends keyof WheelSettings>(k: K, v: WheelSettings[K]) => setWs((s) => ({ ...s, [k]: v }))
   const dirty = mode !== event.animationSettings.mode || JSON.stringify(ws) !== JSON.stringify(event.wheelSettings)
+  useUnsavedWarning(dirty)
 
   const save = () => {
     mutate(event.id, (e) => ({ ...e, wheelSettings: ws, animationSettings: { ...e.animationSettings, mode }, updatedAt: Date.now() }), { immediate: true })

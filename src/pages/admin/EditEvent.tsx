@@ -5,6 +5,7 @@ import { Button } from '../../components/common/Button'
 import { TextArea, TextInput } from '../../components/common/Form'
 import { cleanName } from '../../lib/event/operations'
 import { useActiveEvent, useApp } from '../../store/appStore'
+import { useUnsavedWarning } from '../../hooks/useUnsavedWarning'
 import { toast } from '../../store/toastStore'
 
 export function EditEventPage() {
@@ -12,6 +13,7 @@ export function EditEventPage() {
   const mutate = useApp((s) => s.mutateEvent)
   const [v, setV] = useState({ name: event.eventName, date: event.eventDate, description: event.description, company: event.branding.companyName })
   useEffect(() => setV({ name: event.eventName, date: event.eventDate, description: event.description, company: event.branding.companyName }), [event.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useUnsavedWarning(v.name !== event.eventName || v.date !== event.eventDate || v.description !== event.description || v.company !== event.branding.companyName)
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!cleanName(v.name)) return toast.error('Please enter an event name.')

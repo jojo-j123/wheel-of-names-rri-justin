@@ -1,6 +1,7 @@
 import { ArrowLeft, MonitorPlay } from 'lucide-react'
 import { Suspense, useEffect } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { SaveIndicator } from '../../components/admin/SaveIndicator'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { Button } from '../../components/common/Button'
 import { ErrorBoundary } from '../../components/common/ErrorBoundary'
@@ -28,6 +29,7 @@ export function AdminLayout() {
             </div>
           </Link>
           <div className="flex items-center gap-2">
+            <SaveIndicator />
             <Link to="/" className="inline-flex h-11 items-center gap-2 rounded-xl px-3 text-[15px] font-semibold text-ink-soft transition hover:bg-ink/5">
               <ArrowLeft size={18} /> <span className="hidden sm:inline">Back to event</span>
             </Link>

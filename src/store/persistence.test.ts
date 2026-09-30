@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createIndexedDbAdapter, createMemoryAdapter } from '../lib/storage/storage'
 import { addParticipants } from '../lib/event/operations'
-import { configureStorage, useApp } from './appStore'
+import { configureStorage, hasPendingWrites, useApp } from './appStore'
 
 describe('persistence', () => {
   it('first launch creates the demo event; changes survive a "reload"', async () => {
@@ -46,5 +46,29 @@ describe('persistence', () => {
     expect(s.events[id]).toBeUndefined()
     expect(Object.keys(s.events)).toHaveLength(1)
     expect(s.activeEventId).not.toBe(id)
+  })
+
+  it('retries a failed save until it succeeds — a change is never silently dropped', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+    const mem = createMemoryAdapter()
+    let failures = 2
+    const flaky = { ...mem, persistent: true, saveEvent: async (e: Parameters<typeof mem.saveEvent>[0]) => {
+      if (failures-- > 0) throw new Error('disk busy')
+      return mem.saveEvent(e)
+    } }
+    configureStorage({ ...mem, persistent: true })
+    useApp.setState({ status: 'loading', events: {}, activeEventId: null, saveStatus: 'saved' })
+    await useApp.getState().init()
+    configureStorage(flaky)
+    const id = useApp.getState().activeEventId!
+    useApp.getState().mutateEvent(id, (e) => addParticipants(e, [{ name: 'Must Survive' }], { preventDuplicates: false }).event)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(useApp.getState().saveStatus).toBe('error')
+    expect(hasPendingWrites()).toBe(true) // refresh would be warned
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(useApp.getState().saveStatus).toBe('saved')
+    const stored = (await mem.loadEvents()) as { id: string; participants: { name: string }[] }[]
+    expect(stored.find((e) => e.id === id)!.participants.some((p) => p.name === 'Must Survive')).toBe(true)
+    vi.useRealTimers()
   })
 })

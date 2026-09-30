@@ -9,6 +9,7 @@ import { TextInput } from '../../components/common/Form'
 import { DEFAULT_BRANDING } from '../../lib/branding'
 import { cleanName } from '../../lib/event/operations'
 import { useActiveEvent, useApp } from '../../store/appStore'
+import { useUnsavedWarning } from '../../hooks/useUnsavedWarning'
 import { toast } from '../../store/toastStore'
 
 export function BrandingPage() {
@@ -21,6 +22,7 @@ export function BrandingPage() {
     setTitle(event.eventName)
   }, [event.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const dirty = JSON.stringify(draft) !== JSON.stringify(event.branding) || title !== event.eventName
+  useUnsavedWarning(dirty)
 
   const save = () => {
     mutate(event.id, (e) => ({ ...e, eventName: cleanName(title) || e.eventName, branding: { ...draft, companyName: cleanName(draft.companyName) || 'RRI' }, updatedAt: Date.now() }), { immediate: true })
