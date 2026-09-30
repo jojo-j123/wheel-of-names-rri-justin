@@ -110,7 +110,12 @@ export async function readAll(kind: Kind): Promise<{ docs: unknown[]; deleted: T
   return { docs, deleted }
 }
 
-export type SaveResult = { ok: true; stamp: number } | { ok: false; status: 409; reason: 'stale' | 'deleted'; newerStamp?: number }
+export interface SaveResult {
+  ok: boolean
+  stamp?: number
+  reason?: 'stale' | 'deleted'
+  newerStamp?: number
+}
 
 /**
  * Save a new version (optimistic concurrency).
@@ -121,12 +126,12 @@ export type SaveResult = { ok: true; stamp: number } | { ok: false; status: 409;
 export async function saveDoc(kind: Kind, id: string, stamp: number, body: string, base?: number): Promise<SaveResult> {
   const [versions, deleted] = await Promise.all([listAll(`${kind}/${id}/`), tombstones(kind)])
   const tomb = deleted.find((t) => t.id === id)
-  if (tomb && tomb.deletedAt >= stamp) return { ok: false, status: 409, reason: 'deleted' }
+  if (tomb && tomb.deletedAt >= stamp) return { ok: false, reason: 'deleted' }
   const parsed = versions.map((b) => parseVersion(kind, b)).filter((v): v is Version => !!v)
   const newest = parsed.reduce<Version | null>((a, v) => (!a || v.stamp > a.stamp ? v : a), null)
   if (newest && newest.stamp === stamp) return { ok: true, stamp } // identical version already stored
-  if (base !== undefined && (newest?.stamp ?? 0) !== base) return { ok: false, status: 409, reason: 'stale', newerStamp: newest?.stamp }
-  if (newest && newest.stamp > stamp) return { ok: false, status: 409, reason: 'stale', newerStamp: newest.stamp }
+  if (base !== undefined && (newest?.stamp ?? 0) !== base) return { ok: false, reason: 'stale', newerStamp: newest?.stamp }
+  if (newest && newest.stamp > stamp) return { ok: false, reason: 'stale', newerStamp: newest.stamp }
   await put(`${kind}/${id}/v${stamp}-.json`, body, {
     access: 'public',
     addRandomSuffix: true,
