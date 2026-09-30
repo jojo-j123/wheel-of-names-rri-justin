@@ -301,7 +301,7 @@ const cloudHost: CloudHost = {
     const swap = (u?: string) => (u && map.get(u)) || u
     const next: EventData = {
       ...e,
-      branding: { ...e.branding, logo: swap(e.branding.logo) ?? e.branding.logo },
+      branding: { ...e.branding, logo: swap(e.branding.logo) ?? e.branding.logo, partnerLogo: swap(e.branding.partnerLogo) },
       prizes: e.prizes.map((p) => ({ ...p, image: swap(p.image) })),
     }
     useApp.setState({ events: { ...useApp.getState().events, [id]: next } })

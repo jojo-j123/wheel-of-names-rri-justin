@@ -45,7 +45,11 @@ export const Wheel = memo(
         {/* Hub: static (the logo never rotates). */}
         <div className="absolute left-1/2 top-1/2 z-10 aspect-square w-[21%] -translate-x-1/2 -translate-y-1/2 rounded-full p-[5%] shadow-[0_10px_30px_rgba(0,0,0,0.6)]"
           style={{ background: `linear-gradient(145deg, #ffffff, #d9d4d0)` }}>
-          <BrandLogo logo={branding.logo} companyName={branding.companyName} variant="badge" className="h-full w-full ring-1 ring-black/10" />
+          {branding.hubLogo === 'partner' && branding.partnerLogo ? (
+            <BrandLogo logo={branding.partnerLogo} companyName={branding.partnerName || 'Partner'} variant="badge" className="h-full w-full ring-1 ring-black/10" />
+          ) : (
+            <BrandLogo logo={branding.logo} companyName={branding.companyName} variant="badge" className="h-full w-full ring-1 ring-black/10" />
+          )}
         </div>
       </div>
     )

@@ -13,6 +13,7 @@ import { n } from '../../lib/format'
 import { useApp } from '../../store/appStore'
 import { isRevealing, isSpinning, useDraw } from '../../store/drawStore'
 import { BrandLogo } from '../branding/BrandLogo'
+import { PartnerLogo } from '../branding/PartnerLogo'
 import { PrizeShowcase } from '../prizes/PrizeShowcase'
 import { SpinButton } from '../wheel/SpinButton'
 import { Wheel } from '../wheel/Wheel'
@@ -158,9 +159,20 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
         className={`relative z-20 flex items-center gap-4 px-[clamp(16px,3vw,48px)] pt-[clamp(12px,2.2vh,32px)] ${presentation && !bigWheel ? 'justify-center' : 'justify-between'} ${bigWheel ? 'wide:pointer-events-none wide:absolute wide:inset-x-0 wide:top-0 [&_a]:pointer-events-auto' : ''}`}
       >
         <div className={`flex min-w-0 items-center gap-[clamp(10px,1.2vw,20px)] ${presentation && !bigWheel ? 'flex-col wide:flex-row' : ''} ${bigWheel ? 'wide:max-w-[18vw] wide:flex-col wide:items-start' : ''}`}>
-          <BrandLogo logo={b.logo} companyName={b.companyName} variant="badge" className={`shrink-0 shadow-[0_8px_24px_rgba(0,0,0,0.45)] ${presentation ? 'h-[clamp(48px,7vh,96px)] w-[clamp(48px,7vh,96px)]' : 'h-12 w-12'}`} />
+          <div className="flex shrink-0 items-center gap-[clamp(8px,1vw,16px)]">
+            <BrandLogo logo={b.logo} companyName={b.companyName} variant="badge" className={`shrink-0 shadow-[0_8px_24px_rgba(0,0,0,0.45)] ${presentation ? 'h-[clamp(48px,7vh,96px)] w-[clamp(48px,7vh,96px)]' : 'h-12 w-12'}`} />
+            {b.partnerLogo && (
+              <>
+                <span aria-hidden className={`font-display font-light text-fg/45 ${presentation ? 'text-[clamp(1.2rem,3vh,2.4rem)]' : 'text-xl'}`}>×</span>
+                <PartnerLogo logo={b.partnerLogo} name={b.partnerName} className={presentation ? 'h-[clamp(48px,7vh,96px)] text-[clamp(12px,1.6vh,20px)]' : 'h-12 text-[12px]'} />
+              </>
+            )}
+          </div>
           <div className={`min-w-0 ${presentation && !bigWheel ? 'text-center wide:text-left' : ''} ${bigWheel ? 'wide:[&_h1]:whitespace-normal' : ''}`}>
-            <p className="stage-kicker truncate text-[clamp(0.65rem,1.1vh,0.9rem)] text-fg/55">{b.companyName} presents</p>
+            <p className="stage-kicker truncate text-[clamp(0.65rem,1.1vh,0.9rem)] text-fg/55">
+              {b.companyName}
+              {b.partnerLogo && b.partnerName ? ` × ${b.partnerName}` : ''} presents
+            </p>
             <h1 className={`truncate font-display font-semibold tracking-tight ${presentation ? 'text-[clamp(1.4rem,3.6vh,3.2rem)]' : 'text-xl sm:text-2xl'}`}>{event.eventName}</h1>
           </div>
         </div>

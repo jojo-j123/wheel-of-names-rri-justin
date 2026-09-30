@@ -78,7 +78,7 @@ function sanitizeWinner(v: unknown, eventId: string): WinnerRecord | null {
 
 export function sanitizeBranding(v: unknown): Branding {
   const b = isObj(v) ? v : {}
-  const color = (key: keyof Branding) => (isHexColor(b[key]) ? (b[key] as string) : DEFAULT_BRANDING[key])
+  const color = (key: 'primaryColor' | 'secondaryColor' | 'accentColor' | 'backgroundColor' | 'textColor') => (isHexColor(b[key]) ? (b[key] as string) : DEFAULT_BRANDING[key])
   return {
     companyName: cleanName(str(b.companyName)) || DEFAULT_BRANDING.companyName,
     logo: sanitizeImage(b.logo) ?? DEFAULT_BRANDING.logo,
@@ -88,6 +88,14 @@ export function sanitizeBranding(v: unknown): Branding {
     backgroundColor: color('backgroundColor'),
     textColor: color('textColor'),
     stageTheme: b.stageTheme === 'light' ? 'light' : 'dark',
+    // Partner branding only exists when a partner logo is set (older events stay unchanged).
+    ...(sanitizeImage(b.partnerLogo)
+      ? {
+          partnerLogo: sanitizeImage(b.partnerLogo),
+          partnerName: cleanName(str(b.partnerName)) || undefined,
+          hubLogo: b.hubLogo === 'partner' ? ('partner' as const) : ('main' as const),
+        }
+      : {}),
   }
 }
 
