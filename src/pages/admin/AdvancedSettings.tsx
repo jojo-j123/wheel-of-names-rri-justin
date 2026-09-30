@@ -42,6 +42,7 @@ export function AdvancedSettingsPage() {
   const mutate = useApp((s) => s.mutateEvent)
   const addEvent = useApp((s) => s.addEvent)
   const persistent = useApp((s) => s.persistent)
+  const cloudStatus = useApp((s) => s.cloudStatus)
   const eventCount = useApp((s) => Object.keys(s.events).length)
   const [storage, setStorage] = useState<{ usage: number; quota: number } | null>(null)
   const [check, setCheck] = useState<SelfCheckResult | null>(null)
@@ -174,8 +175,22 @@ export function AdvancedSettingsPage() {
             )}
             <dt className="text-muted">Random source</dt>
             <dd className="font-semibold">crypto.getRandomValues (cryptographically secure)</dd>
+            <dt className="text-muted">Cloud (Vercel)</dt>
+            <dd className="font-semibold">
+              {cloudStatus === 'disabled'
+                ? 'Not connected — data stays on this device only'
+                : cloudStatus === 'offline'
+                  ? 'Offline — changes are kept here and sync when back online'
+                  : cloudStatus === 'synced'
+                    ? 'Connected — all changes are saved to the cloud'
+                    : 'Connecting / syncing…'}
+            </dd>
             <dt className="text-muted">Privacy</dt>
-            <dd className="font-semibold">Data stays in this browser. Nothing is sent anywhere.</dd>
+            <dd className="font-semibold">
+              {cloudStatus === 'disabled'
+                ? 'Data stays in this browser. Nothing is sent anywhere.'
+                : 'Synced to your Vercel storage. The site has no login, so anyone with the link can view and change event data (including emails and phones).'}
+            </dd>
           </dl>
           {event.auditLog.length > 0 && (
             <details className="mt-4">
