@@ -202,6 +202,7 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
               highlightIndex={revealing ? current!.segmentIndex : null}
               celebrate={phase === 'CELEBRATION' || phase === 'COMPLETE'}
               reducedMotion={reduced}
+              listSize={event.participants.length}
               onTick={onTick}
               onPointerIndex={onPointerIndex}
               onSpeed={onSpeed}

@@ -288,8 +288,15 @@ export function drawHighlight(ctx: CanvasRenderingContext2D, r: number, count: n
   ctx.restore()
 }
 
-/** Magnifier geometry — shared by drawing and tests. */
-export function lensGeometry(r: number, count: number) {
+/** The magnifier lens appears from this many names upward. */
+export const LENS_MIN_NAMES = 200
+
+/**
+ * Magnifier geometry — shared by drawing and tests.
+ * `listSize` = participants in the event (defaults to the slice count). The lens is decided on the
+ * list, not on the slices left, so it doesn't vanish when winners leave a 200-person wheel.
+ */
+export function lensGeometry(r: number, count: number, listSize = count) {
   const R = r * 0.94
   const lensR = r * 0.22
   const cy = -R * 0.78 // lens centre (canvas origin = wheel centre, y up is negative)
@@ -297,17 +304,17 @@ export function lensGeometry(r: number, count: number) {
   const visible = 5 // slices across the lens
   const seg = (Math.PI * 2) / count
   const k = (2 * lensR) / (visible * rhoP * seg)
-  return { R, lensR, cy, rhoP, visible, seg, k, show: count > 30 && k >= 1.6 }
+  return { R, lensR, cy, rhoP, visible, seg, k, show: listSize >= LENS_MIN_NAMES && count > 30 && k >= 1.6 }
 }
 
 /**
  * Magnifier lens at the pointer: redraws the slices around the pointer as vectors at k× zoom,
  * so names stay crisp and readable even with 1,000 names on the wheel.
  */
-export function drawLens(ctx: CanvasRenderingContext2D, r: number, names: string[], colors: WheelColors, rotationDeg: number, pointerIndex: number) {
+export function drawLens(ctx: CanvasRenderingContext2D, r: number, names: string[], colors: WheelColors, rotationDeg: number, pointerIndex: number, listSize = names.length): boolean {
   const N = names.length
-  const g = lensGeometry(r, N)
-  if (!g.show) return
+  const g = lensGeometry(r, N, listSize)
+  if (!g.show) return false
   const { lensR, cy, rhoP, seg, k } = g
   const palette = segmentPalette(colors)
   ctx.save()
@@ -352,7 +359,9 @@ export function drawLens(ctx: CanvasRenderingContext2D, r: number, names: string
   ctx.arc(0, cy, lensR, 0, Math.PI * 2)
   ctx.clip()
   const fontPx = rhoP * seg * k * 0.5
-  const maxW = 2 * lensR * 0.86
+  // Names sit in the lower part of the lens so the pointer tip never covers their end.
+  const textShift = lensR * 0.22
+  const maxW = 2 * lensR * 0.7
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.font = `700 ${fontPx}px ${FONT_STACK}`
@@ -360,13 +369,20 @@ export function drawLens(ctx: CanvasRenderingContext2D, r: number, names: string
     const i = (((pointerIndex + d) % N) + N) % N
     const theta = rot + TOP + (i + 0.5) * seg
     // Point on the slice centre line at the lens radius, mapped through the zoom around (0, cy).
-    const x = k * (Math.cos(theta) * rhoP)
-    const y = cy + k * (Math.sin(theta) * rhoP - cy)
+    const rho = rhoP - textShift / k
+    const x = k * (Math.cos(theta) * rho)
+    const y = cy + k * (Math.sin(theta) * rho - cy)
     ctx.save()
     ctx.translate(x, y)
     ctx.rotate(theta)
     ctx.fillStyle = readableTextOn(segmentColor(i, N, palette))
-    ctx.fillText(fitText(ctx, names[i], maxW), 0, 0)
+    // Shrink long names to fit (down to 45%) before ever truncating — the end of a name is often what tells people apart.
+    const w = ctx.measureText(names[i]).width
+    if (w > maxW) {
+      ctx.font = `700 ${Math.max(fontPx * 0.45, (fontPx * maxW) / w)}px ${FONT_STACK}`
+      ctx.fillText(fitText(ctx, names[i], maxW), 0, 0)
+      ctx.font = `700 ${fontPx}px ${FONT_STACK}`
+    } else ctx.fillText(names[i], 0, 0)
     ctx.restore()
   }
   ctx.restore()
@@ -391,4 +407,5 @@ export function drawLens(ctx: CanvasRenderingContext2D, r: number, names: string
   ctx.fillStyle = glare
   ctx.fill()
   ctx.restore()
+  return true
 }
