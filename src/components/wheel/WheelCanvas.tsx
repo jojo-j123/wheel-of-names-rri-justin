@@ -4,7 +4,7 @@ import type { DrawPhase } from '../../types'
 import { buildSpinPlan, type SpinPlan } from '../../lib/wheel/spinPlan'
 import type { ModeTimings } from '../../lib/wheel/timings'
 import { computeTargetRotation, normalizeAngle, segmentAngle, segmentAtPointer } from '../../lib/wheel/wheelMath'
-import { drawBulbs, drawHighlight, drawPegs, pegCount, renderFace, renderRim, type WheelColors } from '../../lib/wheel/renderer'
+import { drawBulbs, drawHighlight, drawLens, drawPegs, pegCount, renderFace, renderRim, type WheelColors } from '../../lib/wheel/renderer'
 
 export interface SpinRequest {
   targetIndex: number
@@ -229,6 +229,8 @@ export const WheelCanvas = memo(
         }
         drawPegs(ctx, r, N, s.rotation, 'rgba(255,255,255,0.85)')
         if (rimRef.current) ctx.drawImage(rimRef.current, -r, -r)
+        // Big lists: magnifier at the pointer keeps names readable — the winner sits in its centre when it stops.
+        drawLens(ctx, r, p.names, p.colors, s.rotation, N > 0 ? segmentAtPointer(s.rotation, N) : 0)
         drawBulbs(ctx, r, now, p.celebrate ? 'win' : s.spinning ? 'spin' : 'idle', speed, p.colors)
       }
       gsap.ticker.add(render)
