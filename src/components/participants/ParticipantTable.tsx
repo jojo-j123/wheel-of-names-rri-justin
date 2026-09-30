@@ -25,6 +25,7 @@ export const ParticipantTable = memo(function ParticipantTable({ rows, selected,
       <div style={{ height: v.getTotalSize(), position: 'relative' }}>
         {v.getVirtualItems().map((item) => {
           const p = rows[item.index]
+          if (!p) return null // list shrank between measurement and render (e.g. a sync from another device)
           const isSel = selected.has(p.id)
           const won = winners.has(p.id)
           return (

@@ -65,6 +65,8 @@ export interface WheelSettings {
   winnersPerDraw: WinnersPerDraw
   sound: boolean
   confetti: boolean
+  /** Show the prize panel beside the wheel. Off = "big wheel" layout. */
+  showPrize: boolean
 }
 
 export type ReducedMotionSetting = 'system' | 'on' | 'off'

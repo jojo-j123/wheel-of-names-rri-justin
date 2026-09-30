@@ -1,4 +1,4 @@
-import { Lock, Moon, OctagonX, RotateCcw, Sun, Undo2, Unlock, Volume2, VolumeX, MonitorPlay } from 'lucide-react'
+import { Gift, Lock, Maximize2, Moon, OctagonX, RotateCcw, Sun, Undo2, Unlock, Volume2, VolumeX, MonitorPlay } from 'lucide-react'
 import type { AnimationMode, EventData, WinnersPerDraw } from '../../types'
 import type { DrawController } from '../../hooks/useDrawController'
 import { prizeRemaining, setActivePrize } from '../../lib/event/operations'
@@ -93,6 +93,14 @@ export function OperatorBar({ event, ctrl, onPresent }: Props) {
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          <IconBtn
+            label={event.wheelSettings.showPrize === false ? 'Show prize' : 'Hide prize (bigger wheel)'}
+            active={event.wheelSettings.showPrize === false}
+            disabled={inDraw}
+            onClick={() => mutate(event.id, (e) => ({ ...e, wheelSettings: { ...e.wheelSettings, showPrize: e.wheelSettings.showPrize === false }, updatedAt: Date.now() }))}
+          >
+            {event.wheelSettings.showPrize === false ? <Maximize2 size={18} /> : <Gift size={18} />}
+          </IconBtn>
           <IconBtn
             label={event.branding.stageTheme === 'light' ? 'Light screen' : 'Dark screen'}
             disabled={inDraw}

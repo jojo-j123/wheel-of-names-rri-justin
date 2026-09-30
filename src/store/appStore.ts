@@ -179,8 +179,10 @@ export const useApp = create<AppState>((set, get) => ({
   mutateEvent(id, fn) {
     const current = get().events[id]
     if (!current) return null
-    const next = fn(current)
+    let next = fn(current)
     if (next === current) return current
+    // Every change must advance updatedAt, or cloud sync would treat it as "already saved".
+    if (next.updatedAt <= current.updatedAt) next = { ...next, updatedAt: Math.max(Date.now(), current.updatedAt + 1) }
     set({ events: { ...get().events, [id]: next } })
     scheduleWrite(id, () => get().events[id])
     cloud.queueEvent(id)

@@ -8,6 +8,7 @@ export const DEFAULT_WHEEL_SETTINGS: WheelSettings = {
   winnersPerDraw: 1,
   sound: true,
   confetti: true,
+  showPrize: true,
 }
 
 export const DEFAULT_ANIMATION_SETTINGS: AnimationSettings = {

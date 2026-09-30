@@ -100,6 +100,7 @@ export function sanitizeWheelSettings(v: unknown): WheelSettings {
     winnersPerDraw: wpd === 3 || wpd === 5 || wpd === 10 ? wpd : 1,
     sound: bool(s.sound, DEFAULT_WHEEL_SETTINGS.sound),
     confetti: bool(s.confetti, DEFAULT_WHEEL_SETTINGS.confetti),
+    showPrize: bool(s.showPrize, DEFAULT_WHEEL_SETTINGS.showPrize),
   }
 }
 
