@@ -4,6 +4,8 @@ import { createDemoEvent } from '../lib/event/demo'
 import { sanitizeEvent, sanitizeTemplate } from '../lib/event/sanitize'
 import { createBestAdapter, isQuotaError, type StorageAdapter } from '../lib/storage/storage'
 import { toast } from './toastStore'
+import { cloud, type CloudHost, type CloudStatus } from '../lib/storage/cloudSync'
+import { useDraw } from './drawStore'
 
 /** `offline`: storage unavailable this session (blocked or failed to load) — changes are not being saved. */
 export type SaveStatus = 'saved' | 'saving' | 'error' | 'offline'
@@ -13,6 +15,8 @@ interface AppState {
   persistent: boolean
   /** Live save indicator for operators. */
   saveStatus: SaveStatus
+  /** Cloud (Vercel) sync state. `disabled` = cloud not connected, running on this device only. */
+  cloudStatus: CloudStatus
   events: Record<string, EventData>
   templates: EventTemplate[]
   activeEventId: string | null
@@ -109,6 +113,7 @@ export const useApp = create<AppState>((set, get) => ({
   status: 'loading',
   persistent: true,
   saveStatus: 'saved',
+  cloudStatus: 'connecting',
   events: {},
   templates: [],
   activeEventId: null,
@@ -143,19 +148,26 @@ export const useApp = create<AppState>((set, get) => ({
     } catch {
       /* templates are optional */
     }
-    if (!Object.keys(events).length && !loadFailed) {
+    let activeEventId = (await adapter.getMeta<string>('activeEventId').catch(() => undefined)) ?? null
+    if (loadFailed) adapter = null // disable writes for this session so nothing real is overwritten
+    const localEmpty = !Object.keys(events).length
+    set({ events, templates, persistent: adapter?.persistent ?? false, saveStatus: adapter?.persistent ? 'saved' : 'offline' })
+    // A brand-new device first asks the cloud for existing events before creating demo data.
+    if (localEmpty && !loadFailed) await cloud.start(cloudHost).catch(() => false)
+    if (!Object.keys(get().events).length) {
       const demo = createDemoEvent()
-      events[demo.id] = demo
+      set({ events: { [demo.id]: demo } })
       await writeEvent(demo)
     }
-    let activeEventId = (await adapter.getMeta<string>('activeEventId').catch(() => undefined)) ?? null
-    if (!activeEventId || !events[activeEventId]) {
-      activeEventId = Object.values(events).sort((a, b) => b.updatedAt - a.updatedAt)[0].id
+    const all = get().events
+    if (!activeEventId || !all[activeEventId]) {
+      activeEventId = Object.values(all).sort((a, b) => b.updatedAt - a.updatedAt)[0].id
     }
-    if (loadFailed) adapter = null // disable writes for this session so nothing real is overwritten
-    set({ status: 'ready', persistent: adapter?.persistent ?? false, events, templates, activeEventId, saveStatus: adapter?.persistent ? 'saved' : 'offline' })
+    set({ status: 'ready', activeEventId })
     if (corrupt) toast.error(`${corrupt} saved event(s) were damaged and were skipped.`)
     if (adapter && !adapter.persistent) toast.info('This browser is blocking storage. Your changes will be lost when you close the tab.')
+    if (!localEmpty && !loadFailed) void cloud.start(cloudHost).catch(() => undefined)
+    if (loadFailed) set({ cloudStatus: 'disabled' })
   },
 
   setActiveEvent(id) {
@@ -171,12 +183,14 @@ export const useApp = create<AppState>((set, get) => ({
     if (next === current) return current
     set({ events: { ...get().events, [id]: next } })
     scheduleWrite(id, () => get().events[id])
+    cloud.queueEvent(id)
     return next
   },
 
   addEvent(e, activate = true) {
     set({ events: { ...get().events, [e.id]: e } })
     void writeEvent(e)
+    cloud.queueEvent(e.id)
     if (activate) get().setActiveEvent(e.id)
   },
 
@@ -197,16 +211,19 @@ export const useApp = create<AppState>((set, get) => ({
     }
     set({ events, activeEventId })
     void adapter?.deleteEvent(id).catch(() => toast.error('The event couldn’t be removed from storage.'))
+    cloud.deleteDoc('events', id)
   },
 
   saveTemplate(t) {
     set({ templates: [...get().templates.filter((x) => x.id !== t.id), t] })
     void adapter?.saveTemplate(t).catch((err) => toast.error(isQuotaError(err) ? 'Storage is full — template not saved.' : 'Template couldn’t be saved.'))
+    void cloud.pushTemplate(t.id)
   },
 
   deleteTemplate(id) {
     set({ templates: get().templates.filter((x) => x.id !== id) })
     void adapter?.deleteTemplate(id).catch(() => undefined)
+    cloud.deleteDoc('templates', id)
   },
 
   async flush() {
@@ -230,4 +247,70 @@ if (typeof window !== 'undefined') {
       e.returnValue = ''
     }
   })
+}
+
+/** Bridge between the store and the cloud sync engine. Remote changes never trigger a push back. */
+const cloudHost: CloudHost = {
+  getEvent: (id) => useApp.getState().events[id],
+  allEvents: () =>
+    // Untouched demo data stays on the device so every new laptop doesn't add another demo to the cloud.
+    Object.values(useApp.getState().events).filter((e) => !(e.isDemo && !e.winnerHistory.length && e.updatedAt - e.createdAt < 5000)),
+  getTemplate: (id) => useApp.getState().templates.find((t) => t.id === id),
+  allTemplates: () => useApp.getState().templates,
+  applyEvents(list) {
+    const events = { ...useApp.getState().events }
+    for (const e of list) events[e.id] = e
+    useApp.setState({ events })
+    for (const e of list) scheduleWrite(e.id, () => useApp.getState().events[e.id])
+  },
+  removeEvents(ids) {
+    const st = useApp.getState()
+    const events = { ...st.events }
+    for (const id of ids) {
+      delete events[id]
+      void adapter?.deleteEvent(id).catch(() => undefined)
+    }
+    let activeEventId = st.activeEventId
+    if (activeEventId && !events[activeEventId]) {
+      const rest = Object.values(events).sort((a, b) => b.updatedAt - a.updatedAt)
+      if (!rest.length) {
+        const demo = createDemoEvent()
+        events[demo.id] = demo
+        void writeEvent(demo)
+      }
+      activeEventId = Object.values(events).sort((a, b) => b.updatedAt - a.updatedAt)[0].id
+      void adapter?.setMeta('activeEventId', activeEventId).catch(() => undefined)
+      toast.info('The open event was deleted on another device.')
+    }
+    useApp.setState({ events, activeEventId })
+  },
+  applyTemplates(list) {
+    useApp.setState({ templates: [...useApp.getState().templates, ...list] })
+    for (const t of list) void adapter?.saveTemplate(t).catch(() => undefined)
+  },
+  removeTemplates(ids) {
+    const set = new Set(ids)
+    useApp.setState({ templates: useApp.getState().templates.filter((t) => !set.has(t.id)) })
+    for (const id of ids) void adapter?.deleteTemplate(id).catch(() => undefined)
+  },
+  replaceImages(id, map) {
+    const e = useApp.getState().events[id]
+    if (!e) return
+    const swap = (u?: string) => (u && map.get(u)) || u
+    const next: EventData = {
+      ...e,
+      branding: { ...e.branding, logo: swap(e.branding.logo) ?? e.branding.logo },
+      prizes: e.prizes.map((p) => ({ ...p, image: swap(p.image) })),
+    }
+    useApp.setState({ events: { ...useApp.getState().events, [id]: next } })
+    scheduleWrite(id, () => useApp.getState().events[id])
+  },
+  setStatus: (cloudStatus) => {
+    if (useApp.getState().cloudStatus !== cloudStatus) useApp.setState({ cloudStatus })
+  },
+  getMeta: async (key) => adapter?.getMeta(key),
+  setMeta: async (key, value) => {
+    await adapter?.setMeta(key, value)
+  },
+  isBusy: () => useDraw.getState().phase !== 'IDLE',
 }
