@@ -7,7 +7,7 @@ import { cloudConfigured, json } from './_lib/blobStore.js'
  */
 export async function GET(request: Request): Promise<Response> {
   const cloud = cloudConfigured()
-  if (!cloud || !new URL(request.url).searchParams.has('check')) return json({ ok: true, cloud, version: 1 })
+  if (!cloud || !request?.url || !new URL(request.url).searchParams.has('check')) return json({ ok: true, cloud, version: 1 })
   const started = Date.now()
   const steps: Record<string, string> = {}
   try {
