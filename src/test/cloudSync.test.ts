@@ -55,7 +55,7 @@ const serverFetch: typeof fetch = async (input, init) => {
   const req = new Request('https://app.test' + url, init)
   const path = new URL(req.url).pathname
   const m = req.method
-  if (path === '/api/health') return health.GET()
+  if (path === '/api/health') return health.GET(req)
   if (path === '/api/state') return state.GET()
   if (path === '/api/upload' && m === 'POST') return upload.POST(req)
   if (path === '/api/events') return m === 'PUT' ? events.PUT(req) : events.DELETE(req)
@@ -127,9 +127,12 @@ afterEach(() => {
 
 describe('cloud API', () => {
   it('health reports whether the Blob store is connected', async () => {
-    expect(await (await health.GET()).json()).toMatchObject({ cloud: true })
+    expect(await (await health.GET(new Request('https://x/api/health'))).json()).toMatchObject({ cloud: true })
+    const check = await (await health.GET(new Request('https://x/api/health?check=1'))).json()
+    expect(check).toMatchObject({ ok: true, steps: { write: 'ok', read: 'ok', delete: 'ok' } })
+    expect([...blobs.keys()].filter((k) => k.startsWith('probe/'))).toHaveLength(0)
     delete process.env.BLOB_READ_WRITE_TOKEN
-    expect(await (await health.GET()).json()).toMatchObject({ cloud: false })
+    expect(await (await health.GET(new Request('https://x/api/health'))).json()).toMatchObject({ cloud: false })
   })
 
   it('rejects bad input (open API guards)', async () => {
