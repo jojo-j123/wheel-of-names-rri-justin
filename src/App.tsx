@@ -81,8 +81,12 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         )}
-        <ToastHost />
-        <ConfirmDialogHost />
+        <ErrorBoundary silent>
+          <ToastHost />
+        </ErrorBoundary>
+        <ErrorBoundary silent>
+          <ConfirmDialogHost />
+        </ErrorBoundary>
       </BrowserRouter>
     </ErrorBoundary>
   )

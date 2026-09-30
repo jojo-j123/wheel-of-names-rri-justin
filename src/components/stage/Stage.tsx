@@ -122,13 +122,24 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
       else if (key === 's' && isSpinning(d.phase)) ctrl.emergencyStop()
       else if (key === 'l') ctrl.toggleLock()
       else if (key === 'n') goToNextPrize()
+      else if (key === 'p' && d.phase === 'IDLE' && !d.locked)
+        useApp.getState().mutateEvent(event.id, (ev) => ({ ...ev, wheelSettings: { ...ev.wheelSettings, showPrize: ev.wheelSettings.showPrize === false } }))
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [ctrl, fs, goToNextPrize])
+  }, [ctrl, fs, goToNextPrize, event.id])
 
-  // Wheel size: as large as the viewport allows.
-  const wheelSize = presentation ? 'w-[min(92vw,calc(100dvh-380px))] wide:w-[min(52vw,calc(100dvh-350px))]' : 'w-[min(92vw,56dvh)] wide:w-[min(50vw,calc(100dvh-330px))]'
+  // Prize panel can be hidden for a much bigger wheel ("big wheel" layout).
+  const bigWheel = event.wheelSettings.showPrize === false
+  // Wheel size: as large as the viewport allows. In big-wheel mode the header floats and controls sit beside the wheel,
+  // so the wheel can use (almost) the full screen height.
+  const wheelSize = bigWheel
+    ? presentation
+      ? 'w-[min(92vw,calc(100dvh-300px))] wide:w-[min(66vw,calc(100dvh-160px))]'
+      : 'w-[min(92vw,60dvh)] wide:w-[min(62vw,calc(100dvh-230px))]'
+    : presentation
+      ? 'w-[min(92vw,calc(100dvh-380px))] wide:w-[min(52vw,calc(100dvh-350px))]'
+      : 'w-[min(92vw,56dvh)] wide:w-[min(50vw,calc(100dvh-330px))]'
 
   return (
     <div
@@ -143,10 +154,12 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
       }}
     >
       {/* Header */}
-      <header className={`relative z-20 flex items-center gap-4 px-[clamp(16px,3vw,48px)] pt-[clamp(12px,2.2vh,32px)] ${presentation ? 'justify-center' : 'justify-between'}`}>
-        <div className={`flex min-w-0 items-center gap-[clamp(10px,1.2vw,20px)] ${presentation ? 'flex-col wide:flex-row' : ''}`}>
+      <header
+        className={`relative z-20 flex items-center gap-4 px-[clamp(16px,3vw,48px)] pt-[clamp(12px,2.2vh,32px)] ${presentation && !bigWheel ? 'justify-center' : 'justify-between'} ${bigWheel ? 'wide:pointer-events-none wide:absolute wide:inset-x-0 wide:top-0 [&_a]:pointer-events-auto' : ''}`}
+      >
+        <div className={`flex min-w-0 items-center gap-[clamp(10px,1.2vw,20px)] ${presentation && !bigWheel ? 'flex-col wide:flex-row' : ''} ${bigWheel ? 'wide:max-w-[18vw] wide:flex-col wide:items-start' : ''}`}>
           <BrandLogo logo={b.logo} companyName={b.companyName} variant="badge" className={`shrink-0 shadow-[0_8px_24px_rgba(0,0,0,0.45)] ${presentation ? 'h-[clamp(48px,7vh,96px)] w-[clamp(48px,7vh,96px)]' : 'h-12 w-12'}`} />
-          <div className={`min-w-0 ${presentation ? 'text-center wide:text-left' : ''}`}>
+          <div className={`min-w-0 ${presentation && !bigWheel ? 'text-center wide:text-left' : ''} ${bigWheel ? 'wide:[&_h1]:whitespace-normal' : ''}`}>
             <p className="stage-kicker truncate text-[clamp(0.65rem,1.1vh,0.9rem)] text-fg/55">{b.companyName} presents</p>
             <h1 className={`truncate font-display font-semibold tracking-tight ${presentation ? 'text-[clamp(1.4rem,3.6vh,3.2rem)]' : 'text-xl sm:text-2xl'}`}>{event.eventName}</h1>
           </div>
@@ -164,12 +177,20 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
         )}
       </header>
 
-      {/* Main: prize beside the wheel on landscape screens, stacked on portrait/mobile. */}
-      <main className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-[2vh] px-[clamp(16px,3vw,56px)] py-[1.5vh] wide:flex-row wide:gap-[6vw]">
-        <div className="w-full max-w-[640px] wide:w-[min(30vw,560px)] wide:flex-none">
-          <PrizeShowcase prize={prize} remaining={remaining} branding={b} big={presentation} emptyText={presentation ? event.description || 'Good luck, everyone!' : 'No prize selected — pick one below or in Admin.'} />
-        </div>
-        <div className="flex min-h-0 flex-col items-center justify-center gap-[1.8vh]">
+      {/* Main: prize beside the wheel (or big-wheel layout without it), stacked on portrait/mobile. */}
+      <main
+        className={`relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center gap-[2vh] px-[clamp(16px,3vw,56px)] py-[1.5vh] ${
+          bigWheel ? 'wide:grid wide:grid-cols-[1fr_auto_1fr] wide:gap-[3vw] wide:py-[1vh]' : 'wide:flex-row wide:gap-[6vw]'
+        }`}
+      >
+        {bigWheel ? (
+          <div aria-hidden className="hidden wide:block" />
+        ) : (
+          <div className="w-full max-w-[640px] wide:w-[min(30vw,560px)] wide:flex-none">
+            <PrizeShowcase prize={prize} remaining={remaining} branding={b} big={presentation} emptyText={presentation ? event.description || 'Good luck, everyone!' : 'No prize selected — pick one below or in Admin.'} />
+          </div>
+        )}
+        <div className={`flex min-h-0 flex-col items-center justify-center gap-[1.8vh] ${bigWheel ? 'wide:contents' : ''}`}>
           <div className={`relative ${wheelSize} max-w-[1400px]`}>
             <Wheel
               ref={wheelRef}
@@ -186,44 +207,53 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
               onSpeed={onSpeed}
             />
           </div>
-          {/* Live name under the pointer (the only way to read 1,000-name wheels). */}
-          <div className="h-[clamp(28px,4vh,48px)]" aria-hidden={!spinning}>
-            <motion.div
-              animate={{ opacity: spinning ? 1 : 0, y: spinning ? 0 : 6 }}
-              className="rounded-full bg-fg/8 px-5 py-1.5 font-display text-[clamp(1rem,2.4vh,1.8rem)] font-semibold ring-1 ring-fg/12"
-            >
-              <span ref={liveNameRef} />
-            </motion.div>
-          </div>
-          <SpinButton phase={phase} locked={locked} disabled={!!blocker && !pendingBatch} label={spinLabel} color={b.primaryColor} size={presentation ? 'lg' : 'md'} onSpin={ctrl.spin} />
-          <p className="tabular text-center text-[clamp(0.8rem,1.5vh,1.15rem)] text-fg/55">
-            {blocker && phase === 'IDLE' && !pendingBatch ? (
-              <span className="flex flex-col items-center gap-3">
-                <span className="text-fg/80">{blocker}</span>
-                {prize && remaining <= 0 && nextPrize && !locked && (
-                  <button
-                    onClick={(e) => {
-                      goToNextPrize()
-                      e.currentTarget.blur()
-                    }}
-                    className="rounded-full bg-fg/10 px-5 py-2 text-sm font-semibold text-fg ring-1 ring-fg/15 transition hover:bg-fg/16"
-                  >
-                    Next prize: {nextPrize.name} →
-                  </button>
-                )}
-              </span>
-            ) : (
-              <>
-                <span className="font-semibold text-fg/85">{n(event.participants.length)}</span> participants
-                {eligible.length !== event.participants.length && (
-                  <>
-                    {' · '}
-                    <span className="font-semibold text-fg/85">{n(eligible.length)}</span> in the draw
-                  </>
-                )}
-              </>
+          <div className={`flex flex-col items-center gap-[1.8vh] ${bigWheel ? 'wide:items-start wide:self-center' : ''}`}>
+            {bigWheel && prize && (
+              <p className="max-w-[26vw] text-center wide:text-left">
+                <span className="stage-kicker block text-[clamp(0.65rem,1.1vh,0.9rem)] text-fg/55">Now drawing</span>
+                <span className="font-display text-[clamp(1.1rem,2.6vh,2.2rem)] font-semibold leading-tight">{prize.name}</span>
+                {prize.quantity > 1 && <span className="block text-sm text-fg/55">{remaining} of {prize.quantity} left</span>}
+              </p>
             )}
-          </p>
+            {/* Live name under the pointer (the only way to read 1,000-name wheels). */}
+            <div className="h-[clamp(28px,4vh,48px)]" aria-hidden={!spinning}>
+              <motion.div
+                animate={{ opacity: spinning ? 1 : 0, y: spinning ? 0 : 6 }}
+                className="rounded-full bg-fg/8 px-5 py-1.5 font-display text-[clamp(1rem,2.4vh,1.8rem)] font-semibold ring-1 ring-fg/12"
+              >
+                <span ref={liveNameRef} />
+              </motion.div>
+            </div>
+            <SpinButton phase={phase} locked={locked} disabled={!!blocker && !pendingBatch} label={spinLabel} color={b.primaryColor} size={presentation ? 'lg' : 'md'} onSpin={ctrl.spin} />
+            <div className={`tabular text-center text-[clamp(0.8rem,1.5vh,1.15rem)] text-fg/55 ${bigWheel ? 'wide:max-w-[26vw] wide:text-left' : ''}`}>
+              {blocker && phase === 'IDLE' && !pendingBatch ? (
+                <span className={`flex flex-col items-center gap-3 ${bigWheel ? 'wide:items-start' : ''}`}>
+                  <span className="text-fg/80">{blocker}</span>
+                  {prize && remaining <= 0 && nextPrize && !locked && (
+                    <button
+                      onClick={(e) => {
+                        goToNextPrize()
+                        e.currentTarget.blur()
+                      }}
+                      className="rounded-full bg-fg/10 px-5 py-2 text-sm font-semibold text-fg ring-1 ring-fg/15 transition hover:bg-fg/16"
+                    >
+                      Next prize: {nextPrize.name} →
+                    </button>
+                  )}
+                </span>
+              ) : (
+                <>
+                  <span className="font-semibold text-fg/85">{n(event.participants.length)}</span> participants
+                  {eligible.length !== event.participants.length && (
+                    <>
+                      {' · '}
+                      <span className="font-semibold text-fg/85">{n(eligible.length)}</span> in the draw
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </main>
 

@@ -61,6 +61,7 @@ export function DrawSettingsPage() {
         <div className="space-y-3">
           <Toggle label="Sound" description="Wheel clicks, drum-roll and celebration sounds." checked={ws.sound} onChange={(v) => set('sound', v)} />
           <Toggle label="Confetti" description="Celebrate each winner with confetti." checked={ws.confetti} onChange={(v) => set('confetti', v)} />
+          <Toggle label="Show the prize next to the wheel" description="Turn off for a much bigger wheel. The prize still appears in the winner reveal." checked={ws.showPrize !== false} onChange={(v) => set('showPrize', v)} />
           <Toggle label="Remove winners after each draw" description="Someone who wins can’t win again. Turn off to keep winners in the draw." checked={ws.removeWinners} onChange={(v) => set('removeWinners', v)} />
         </div>
 
