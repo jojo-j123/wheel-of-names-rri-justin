@@ -43,7 +43,7 @@ export function DrawSettingsPage() {
                   role="radio"
                   aria-checked={active}
                   onClick={() => setMode(m)}
-                  className={`relative rounded-2xl border p-4 text-left transition ${active ? 'border-brand bg-brand/[0.05] ring-4 ring-brand/15' : 'border-line bg-white hover:border-ink/25'}`}
+                  className={`relative rounded-2xl border p-4 text-left transition ${active ? 'border-brand bg-brand/[0.05] ring-4 ring-brand/15' : 'border-line bg-field hover:border-ink/25'}`}
                 >
                   {active && (
                     <span className="absolute right-3 top-3 grid h-6 w-6 place-items-center rounded-full bg-brand text-on-brand">
@@ -74,7 +74,7 @@ export function DrawSettingsPage() {
                 role="radio"
                 aria-checked={ws.winnersPerDraw === nw}
                 onClick={() => set('winnersPerDraw', nw)}
-                className={`h-14 w-20 rounded-2xl border font-display text-xl font-semibold transition ${ws.winnersPerDraw === nw ? 'border-brand bg-brand text-on-brand' : 'border-line bg-white hover:border-ink/25'}`}
+                className={`h-14 w-20 rounded-2xl border font-display text-xl font-semibold transition ${ws.winnersPerDraw === nw ? 'border-brand bg-brand text-on-brand' : 'border-line bg-field hover:border-ink/25'}`}
               >
                 {nw}
               </button>

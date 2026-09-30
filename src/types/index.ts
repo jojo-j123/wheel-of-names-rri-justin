@@ -49,7 +49,11 @@ export interface Branding {
   accentColor: string
   backgroundColor: string
   textColor: string
+  /** Big-screen look: dark (default, best for projectors/LED walls) or light (bright daylight venues). */
+  stageTheme: StageTheme
 }
+
+export type StageTheme = 'dark' | 'light'
 
 export type AnimationMode = 'standard' | 'dramatic' | 'grand'
 

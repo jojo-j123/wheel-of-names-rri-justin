@@ -87,6 +87,7 @@ export function sanitizeBranding(v: unknown): Branding {
     accentColor: color('accentColor'),
     backgroundColor: color('backgroundColor'),
     textColor: color('textColor'),
+    stageTheme: b.stageTheme === 'light' ? 'light' : 'dark',
   }
 }
 

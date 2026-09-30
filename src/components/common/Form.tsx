@@ -13,7 +13,7 @@ export function Field({ label, hint, required, children, htmlFor }: { label: str
 }
 
 const inputCls =
-  'w-full rounded-xl border border-line bg-white px-4 text-[15px] text-ink placeholder:text-muted/70 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/15'
+  'w-full rounded-xl border border-line bg-field px-4 text-[15px] text-ink placeholder:text-muted/70 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] outline-none transition focus:border-brand focus:ring-4 focus:ring-brand/15'
 
 export function TextInput({ label, hint, required, ...rest }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
   const id = useId()
@@ -36,7 +36,7 @@ export function TextArea({ label, hint, ...rest }: TextareaHTMLAttributes<HTMLTe
 export function Toggle({ checked, onChange, label, description }: { checked: boolean; onChange(v: boolean): void; label: string; description?: string }) {
   const id = useId()
   return (
-    <div className="flex items-center justify-between gap-6 rounded-2xl border border-line bg-white px-5 py-4">
+    <div className="flex items-center justify-between gap-6 rounded-2xl border border-line bg-field px-5 py-4">
       <div>
         <label htmlFor={id} className="block cursor-pointer text-[15px] font-semibold text-ink">
           {label}
@@ -71,7 +71,7 @@ export function Segmented<T extends string | number>({
   dark?: boolean
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className={`inline-flex rounded-xl p-1 ${dark ? 'bg-white/8 ring-1 ring-white/10' : 'bg-ink/5'}`}>
+    <div role="radiogroup" aria-label={label} className={`inline-flex rounded-xl p-1 ${dark ? 'bg-fg/8 ring-1 ring-fg/10' : 'bg-ink/5'}`}>
       {options.map((o) => {
         const active = o.value === value
         return (
@@ -82,7 +82,7 @@ export function Segmented<T extends string | number>({
             onClick={() => onChange(o.value)}
             onMouseUp={(e) => dark && e.currentTarget.blur()}
             className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-              active ? (dark ? 'bg-white text-ink shadow' : 'bg-white text-ink shadow-sm') : dark ? 'text-white/70 hover:text-white' : 'text-muted hover:text-ink'
+              active ? (dark ? 'bg-fg text-sbg shadow' : 'bg-card text-ink shadow-sm') : dark ? 'text-fg/70 hover:text-fg' : 'text-muted hover:text-ink'
             }`}
           >
             {o.label}

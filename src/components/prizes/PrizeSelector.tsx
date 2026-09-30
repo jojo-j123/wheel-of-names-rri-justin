@@ -32,7 +32,7 @@ export function PrizeSelector({ event }: { event: EventData }) {
           value={event.activePrizeId ?? ''}
           disabled={busy}
           onChange={(e) => mutate(event.id, (ev) => setActivePrize(ev, e.target.value || null))}
-          className="h-12 w-full rounded-xl border border-line bg-white px-3 text-[15px] font-semibold outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+          className="h-12 w-full rounded-xl border border-line bg-field px-3 text-[15px] font-semibold outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
         >
           <option value="">No prize</option>
           {enabled.map((p) => (

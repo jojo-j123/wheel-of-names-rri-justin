@@ -54,7 +54,7 @@ export function PasteNames({ open, onClose, existingNames, preventDuplicates, on
           <p className="mt-1 text-2xl font-display font-semibold">{plural(willAdd, 'participant')}</p>
           <p className="text-sm text-muted">will be added</p>
           {dupes > 0 && (
-            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 dark:bg-amber-400/10 dark:text-amber-300">
               {plural(dupes, 'name')} already on the list{preventDuplicates ? ' — they will be skipped.' : '.'}
             </p>
           )}

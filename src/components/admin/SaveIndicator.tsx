@@ -11,7 +11,7 @@ export function SaveIndicator() {
   else if (status === 'saving' || cloud === 'syncing' || cloud === 'connecting')
     view = { icon: <Loader2 size={15} className="animate-spin" />, text: cloud === 'disabled' ? 'Saving…' : 'Saving to cloud…', cls: 'text-muted' }
   else if (cloud === 'synced') view = { icon: <Cloud size={15} />, text: 'Saved to cloud', cls: 'text-success' }
-  else if (cloud === 'offline') view = { icon: <CloudOff size={15} />, text: 'Offline — saved on this device, will sync', cls: 'text-amber-700' }
+  else if (cloud === 'offline') view = { icon: <CloudOff size={15} />, text: 'Offline — saved on this device, will sync', cls: 'text-amber-700 dark:text-amber-400' }
   else view = { icon: <CheckCircle2 size={15} />, text: 'Saved on this device', cls: 'text-success' }
   return (
     <span role="status" aria-live="polite" className={`hidden items-center gap-1.5 text-xs font-semibold md:inline-flex ${view.cls}`}>

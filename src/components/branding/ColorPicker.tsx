@@ -4,7 +4,7 @@ import { SWATCHES, readableTextOn } from '../../lib/branding'
 /** Visual colour choice: tap a swatch, or open the full picker. No hex codes required. */
 export function ColorPicker({ label, description, value, onChange }: { label: string; description: string; value: string; onChange(v: string): void }) {
   return (
-    <div className="rounded-2xl border border-line bg-white p-4">
+    <div className="rounded-2xl border border-line bg-field p-4">
       <div className="flex items-center gap-4">
         <label className="relative h-12 w-12 shrink-0 cursor-pointer overflow-hidden rounded-full ring-1 ring-black/10" style={{ background: value }} title="Open colour picker">
           <input type="color" value={value} onChange={(e) => onChange(e.target.value.toUpperCase())} className="absolute inset-0 h-full w-full opacity-0" aria-label={`${label}: pick any colour`} />
