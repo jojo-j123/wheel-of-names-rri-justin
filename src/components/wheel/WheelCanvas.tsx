@@ -30,6 +30,8 @@ interface Props {
   highlightIndex: number | null
   celebrate: boolean
   reducedMotion: boolean
+  /** Participants in the event — decides whether the magnifier lens is used. */
+  listSize: number
   pointerEl: React.RefObject<HTMLDivElement | null>
   onTick?(speed: number): void
   onPointerIndex?(index: number): void
@@ -230,7 +232,9 @@ export const WheelCanvas = memo(
         drawPegs(ctx, r, N, s.rotation, 'rgba(255,255,255,0.85)')
         if (rimRef.current) ctx.drawImage(rimRef.current, -r, -r)
         // Big lists: magnifier at the pointer keeps names readable — the winner sits in its centre when it stops.
-        drawLens(ctx, r, p.names, p.colors, s.rotation, N > 0 ? segmentAtPointer(s.rotation, N) : 0)
+        const lensIndex = N > 0 ? segmentAtPointer(s.rotation, N) : 0
+        const lensShown = drawLens(ctx, r, p.names, p.colors, s.rotation, lensIndex, p.listSize)
+        if (import.meta.env.DEV) (window as unknown as { __lens?: unknown }).__lens = { shown: lensShown, name: lensShown ? p.names[lensIndex] : null }
         drawBulbs(ctx, r, now, p.celebrate ? 'win' : s.spinning ? 'spin' : 'idle', speed, p.colors)
       }
       gsap.ticker.add(render)

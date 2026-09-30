@@ -15,6 +15,7 @@ interface Props {
   highlightIndex: number | null
   celebrate: boolean
   reducedMotion: boolean
+  listSize: number
   onTick?(speed: number): void
   onPointerIndex?(index: number): void
   onSpeed?(speed: number): void
@@ -34,6 +35,7 @@ export const Wheel = memo(
           highlightIndex={props.highlightIndex}
           celebrate={props.celebrate}
           reducedMotion={props.reducedMotion}
+          listSize={props.listSize}
           pointerEl={pointerRef}
           onTick={props.onTick}
           onPointerIndex={props.onPointerIndex}
