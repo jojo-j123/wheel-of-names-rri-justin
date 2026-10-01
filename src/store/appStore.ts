@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { EventData, EventTemplate } from '../types'
 import { createDemoEvent } from '../lib/event/demo'
 import { sanitizeEvent, sanitizeTemplate } from '../lib/event/sanitize'
-import { createBestAdapter, isQuotaError, type StorageAdapter } from '../lib/storage/storage'
+import { createBestAdapter, isQuotaError, withTimeout, type StorageAdapter } from '../lib/storage/storage'
 import { toast } from './toastStore'
 import { cloud, type CloudHost, type CloudStatus } from '../lib/storage/cloudSync'
 import { useDraw } from './drawStore'
@@ -125,7 +125,7 @@ export const useApp = create<AppState>((set, get) => ({
     let corrupt = 0
     let loadFailed = false
     try {
-      for (const raw of await adapter.loadEvents()) {
+      for (const raw of await withTimeout(adapter.loadEvents(), 15000)) {
         const e = sanitizeEvent(raw)
         if (e) events[e.id] = e
         else corrupt++
@@ -141,14 +141,14 @@ export const useApp = create<AppState>((set, get) => ({
     }
     const templates: EventTemplate[] = []
     try {
-      for (const raw of await adapter.loadTemplates()) {
+      for (const raw of await withTimeout(adapter.loadTemplates(), 8000)) {
         const t = sanitizeTemplate(raw)
         if (t) templates.push(t)
       }
     } catch {
       /* templates are optional */
     }
-    let activeEventId = (await adapter.getMeta<string>('activeEventId').catch(() => undefined)) ?? null
+    let activeEventId = (await withTimeout(adapter.getMeta<string>('activeEventId'), 4000).catch(() => undefined)) ?? null
     if (loadFailed) adapter = null // disable writes for this session so nothing real is overwritten
     const localEmpty = !Object.keys(events).length
     set({ events, templates, persistent: adapter?.persistent ?? false, saveStatus: adapter?.persistent ? 'saved' : 'offline' })

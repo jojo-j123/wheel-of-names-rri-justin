@@ -56,11 +56,28 @@ export function createMemoryAdapter(): StorageAdapter {
 }
 
 /** Picks IndexedDB when it actually works, otherwise memory. */
+/** Rejects if `p` hasn't settled in time. Some iOS in-app browsers (WhatsApp, Instagram) never answer IndexedDB calls. */
+export function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('Storage timed out')), ms)
+    p.then(
+      (v) => {
+        clearTimeout(t)
+        resolve(v)
+      },
+      (e: unknown) => {
+        clearTimeout(t)
+        reject(e instanceof Error ? e : new Error(String(e)))
+      },
+    )
+  })
+}
+
 export async function createBestAdapter(): Promise<StorageAdapter> {
   try {
     if (typeof indexedDB === 'undefined') return createMemoryAdapter()
     const a = createIndexedDbAdapter()
-    await a.setMeta('probe', Date.now())
+    await withTimeout(a.setMeta('probe', Date.now()), 4000)
     return a
   } catch {
     return createMemoryAdapter()

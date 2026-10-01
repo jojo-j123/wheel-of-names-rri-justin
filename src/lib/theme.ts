@@ -34,7 +34,11 @@ export function setAppearance(a: Appearance) {
 /** Follow the OS when set to "system". */
 export function watchSystemAppearance() {
   if (typeof matchMedia === 'undefined') return
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  const mq = matchMedia('(prefers-color-scheme: dark)')
+  const onChange = () => {
     if (getAppearance() === 'system') applyAppearance('system')
-  })
+  }
+  // Safari < 14 only has the old addListener API.
+  if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onChange)
+  else (mq as unknown as { addListener?: (cb: () => void) => void }).addListener?.(onChange)
 }

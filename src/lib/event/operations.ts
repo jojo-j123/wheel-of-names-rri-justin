@@ -17,7 +17,10 @@ export const MAX_PARTICIPANTS = 5000
 export const MAX_NAME_LENGTH = 80
 
 export function cleanName(name: string): string {
-  return String(name ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_NAME_LENGTH)
+  // Invisible characters (zero-width space, BOM, soft hyphen) sneak in when copying from chats, web pages or Excel.
+  // Zero-width joiners stay: emoji and some scripts need them — but a name made only of them is blank.
+  const s = String(name ?? '').replace(/[\u200B\u2060\uFEFF\u00AD]/g, '').replace(/\s+/g, ' ').trim()
+  return /^[\u200C\u200D]*$/.test(s) ? '' : s.slice(0, MAX_NAME_LENGTH)
 }
 
 /** Key used for duplicate detection: case/space/accent-insensitive. */

@@ -4,6 +4,9 @@ import { ConfirmDialogHost } from './components/common/ConfirmDialog'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { ToastHost } from './components/common/Toast'
 import { useApp } from './store/appStore'
+import { toast } from './store/toastStore'
+import { createDemoEvent } from './lib/event/demo'
+import { reportError } from './lib/errorReport'
 import { EventScreen } from './pages/EventScreen'
 import { PresentationPage } from './pages/Presentation'
 import { AdminLayout } from './pages/admin/AdminLayout'
@@ -45,7 +48,17 @@ function Loading() {
 export default function App() {
   const status = useApp((s) => s.status)
   useEffect(() => {
-    void useApp.getState().init()
+    useApp
+      .getState()
+      .init()
+      .catch((err: unknown) => {
+        // Never leave the operator on an endless spinner: start a temporary demo and say so.
+        reportError(err, 'init')
+        if (useApp.getState().status === 'ready') return
+        const demo = createDemoEvent()
+        useApp.setState({ events: { [demo.id]: demo }, activeEventId: demo.id, status: 'ready', saveStatus: 'offline', cloudStatus: 'disabled' })
+        toast.error('Saved events couldn’t be loaded on this device. Refresh to try again — nothing has been deleted.')
+      })
   }, [])
 
   return (

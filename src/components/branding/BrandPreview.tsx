@@ -38,7 +38,7 @@ export function BrandPreview({ branding, eventName }: { branding: Branding; even
       </div>
       <div className="relative mx-auto mt-5 aspect-square w-[70%]">
         <canvas ref={canvasRef} className="h-full w-full" />
-        <div className="absolute left-1/2 top-1/2 aspect-square w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white p-[4%] shadow-lg">
+        <div className="absolute left-1/2 top-1/2 h-[22%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white p-[4%] shadow-lg">
           <BrandLogo
             logo={branding.hubLogo === 'partner' && branding.partnerLogo ? branding.partnerLogo : branding.logo}
             companyName={branding.companyName}
