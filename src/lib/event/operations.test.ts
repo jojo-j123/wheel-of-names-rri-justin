@@ -12,6 +12,10 @@ const names = (n: number) => Array.from({ length: n }, (_, i) => ({ name: `Perso
 const withPeople = (n: number) => addParticipants(createEmptyEvent('T'), names(n), { preventDuplicates: false }).event
 
 describe('participants', () => {
+  it('drops invisible-only names but keeps emoji joiners', () => {
+    const r = addParticipants(createEmptyEvent(), [{ name: '\u200b' }, { name: '\ufeff \u200d' }, { name: 'Sa\u200brah' }, { name: '👩\u200d👩\u200d👧' }], { preventDuplicates: false })
+    expect(r.event.participants.map((p) => p.name)).toEqual(['Sarah', '👩\u200d👩\u200d👧'])
+  })
   it('adds, trims and skips empty names', () => {
     const r = addParticipants(createEmptyEvent(), [{ name: '  John   Doe ' }, { name: '' }, { name: '   ' }, { name: 'Jane', email: 'j@x.com', phone: '0100' }], { preventDuplicates: false })
     expect(r.added).toBe(2)
