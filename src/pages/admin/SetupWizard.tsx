@@ -152,7 +152,7 @@ export function SetupWizardPage() {
                 <TextInput label="Event date" type="date" value={draft.eventDate} onChange={(e) => setDraft({ ...draft, eventDate: e.target.value })} />
                 <div>
                   <p className="mb-2 text-sm font-semibold">Start from</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {[{ id: '', name: 'Blank event (RRI branding)' }, ...allTemplates].map((t) => (
                       <button
                         key={t.id || 'blank'}
@@ -226,7 +226,7 @@ export function SetupWizardPage() {
           )}
 
           {step === 3 && (
-            <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
               <Card>
                 <h1 className="font-display text-2xl font-semibold">Choose your look</h1>
                 <p className="mb-6 mt-1 text-muted">RRI branding is already set. Change it only if this event needs a different look.</p>

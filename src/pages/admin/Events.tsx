@@ -68,7 +68,7 @@ export function EventsPage() {
           </>
         }
       />
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {list.map((e) => (
           <EventCard
             key={e.id}
@@ -121,7 +121,7 @@ export function EventsPage() {
 
       <h2 className="mt-14 font-display text-2xl font-semibold">Templates</h2>
       <p className="mt-1 text-muted">Start a new event with ready-made branding, settings and prizes. Participants and winners always start empty.</p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[...templates, ...BUILT_IN_TEMPLATES].map((t) => (
           <div key={t.id} className="flex flex-col rounded-3xl border border-line bg-card p-5 shadow-card">
             <div className="flex items-center gap-3">

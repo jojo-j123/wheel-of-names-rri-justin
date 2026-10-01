@@ -44,7 +44,7 @@ export function BrandingPage() {
           </>
         }
       />
-      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px]">
         <Card>
           <div className="space-y-6">
             <TextInput label="Event title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} />

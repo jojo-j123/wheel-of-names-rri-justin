@@ -147,3 +147,6 @@ input[type="color"]::-moz-color-swatch {
 @custom-variant dark (&:where(.dark, .dark *));
 
 @custom-variant wide (@media (orientation: landscape) and (min-width: 900px));
+
+/* Phones in portrait. Only used for small-screen fixes so laptops, TVs and LED walls stay untouched. */
+@custom-variant phone (@media (max-width: 599px));
