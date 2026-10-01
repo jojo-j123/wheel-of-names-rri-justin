@@ -19,6 +19,7 @@ import { SpinButton } from '../wheel/SpinButton'
 import { Wheel } from '../wheel/Wheel'
 import type { WheelHandle } from '../wheel/WheelCanvas'
 import { WinnerReveal } from '../winner/WinnerReveal'
+import { ErrorBoundary } from '../common/ErrorBoundary'
 import { OperatorBar } from './OperatorBar'
 import { PresenterControls } from './PresenterControls'
 
@@ -270,8 +271,11 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
         </div>
       </main>
 
-      {!presentation && onPresent && <OperatorBar event={event} ctrl={ctrl} onPresent={onPresent} />}
-      {presentation && onExitPresentation && <PresenterControls ctrl={ctrl} fs={fs} onExit={onExitPresentation} />}
+      {/* A glitch in the controls must never take the wheel down mid-event. */}
+      <ErrorBoundary silent>
+        {!presentation && onPresent && <OperatorBar event={event} ctrl={ctrl} onPresent={onPresent} />}
+        {presentation && onExitPresentation && <PresenterControls ctrl={ctrl} fs={fs} onExit={onExitPresentation} />}
+      </ErrorBoundary>
 
       <AnimatePresence>
         {revealing && current && (
