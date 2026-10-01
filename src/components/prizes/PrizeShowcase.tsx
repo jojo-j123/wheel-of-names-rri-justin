@@ -41,7 +41,7 @@ export function PrizeShowcase({ prize, remaining, branding, big, emptyText }: Pr
               )}
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-white/5" />
             </div>
-            <div className="mt-[1.8vh] flex items-center gap-3 wide:hidden">
+            <div className={`mt-[1.8vh] flex items-center gap-3 wide:hidden ${big ? 'phone:hidden' : ''}`}>
               {prize.image && <img src={prize.image} alt="" className="h-14 w-14 rounded-xl object-cover ring-1 ring-fg/15" />}
             </div>
             <h2 className={`mt-[1vh] font-display font-bold leading-[1.05] tracking-tight ${big ? 'text-[clamp(1.8rem,4.4vh,4.2rem)]' : 'text-[clamp(1.5rem,3.6vh,3rem)]'}`}>

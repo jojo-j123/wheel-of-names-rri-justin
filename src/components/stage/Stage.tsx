@@ -139,12 +139,12 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
       ? 'w-[min(92vw,calc(100dvh-300px))] wide:w-[min(66vw,calc(100dvh-160px))]'
       : 'w-[min(92vw,60dvh)] wide:w-[min(62vw,calc(100dvh-230px))]'
     : presentation
-      ? 'w-[min(92vw,calc(100dvh-380px))] wide:w-[min(52vw,calc(100dvh-350px))]'
+      ? 'w-[min(92vw,calc(100dvh-380px))] phone:w-[clamp(240px,calc(100dvh-480px),88vw)] wide:w-[min(52vw,calc(100dvh-350px))]'
       : 'w-[min(92vw,56dvh)] wide:w-[min(50vw,calc(100dvh-330px))]'
 
   return (
     <div
-      className={`stage-grain relative flex flex-col text-fg ${presentation ? 'h-dvh overflow-hidden' : 'min-h-dvh overflow-x-hidden wide:h-dvh wide:overflow-hidden'}`}
+      className={`stage-grain relative flex flex-col text-fg ${presentation ? 'h-dvh overflow-hidden phone:h-auto phone:min-h-dvh phone:overflow-x-hidden phone:overflow-y-auto' : 'min-h-dvh overflow-x-hidden wide:h-dvh wide:overflow-hidden'}`}
       style={{
         ...(brandCssVars(b) as React.CSSProperties),
         ['--stage-fg' as string]: sp.fg,
@@ -156,9 +156,9 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
     >
       {/* Header */}
       <header
-        className={`relative z-20 flex items-center gap-4 px-[clamp(16px,3vw,48px)] pt-[clamp(12px,2.2vh,32px)] ${presentation && !bigWheel ? 'justify-center' : 'justify-between'} ${bigWheel ? 'wide:pointer-events-none wide:absolute wide:inset-x-0 wide:top-0 [&_a]:pointer-events-auto' : ''}`}
+        className={`relative z-20 flex items-center gap-4 px-[clamp(16px,3vw,48px)] pt-[clamp(12px,2.2vh,32px)] ${presentation && !bigWheel ? 'justify-center' : 'justify-between'} ${!presentation && b.partnerLogo ? 'phone:items-start' : ''} ${bigWheel ? 'wide:pointer-events-none wide:absolute wide:inset-x-0 wide:top-0 [&_a]:pointer-events-auto' : ''}`}
       >
-        <div className={`flex min-w-0 items-center gap-[clamp(10px,1.2vw,20px)] ${presentation && !bigWheel ? 'flex-col wide:flex-row' : ''} ${bigWheel ? 'wide:max-w-[18vw] wide:flex-col wide:items-start' : ''}`}>
+        <div className={`flex min-w-0 items-center gap-[clamp(10px,1.2vw,20px)] ${presentation && !bigWheel ? 'flex-col wide:flex-row' : ''} ${bigWheel ? 'wide:max-w-[18vw] wide:flex-col wide:items-start' : ''} ${!presentation && b.partnerLogo ? 'phone:flex-col phone:items-start phone:gap-1.5' : ''}`}>
           <div className="flex shrink-0 items-center gap-[clamp(8px,1vw,16px)]">
             <BrandLogo logo={b.logo} companyName={b.companyName} variant="badge" className={`shrink-0 shadow-[0_8px_24px_rgba(0,0,0,0.45)] ${presentation ? 'h-[clamp(48px,7vh,96px)] w-[clamp(48px,7vh,96px)]' : 'h-12 w-12'}`} />
             {b.partnerLogo && (
@@ -177,7 +177,7 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
           </div>
         </div>
         {!presentation && (
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${b.partnerLogo ? 'phone:mt-1' : ''}`}>
             {event.isDemo && <span className="hidden rounded-full bg-fg/10 px-3 py-1 text-xs font-semibold text-fg/70 ring-1 ring-fg/10 sm:inline">Demo data</span>}
             <Link
               to="/admin"
@@ -198,12 +198,12 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
         {bigWheel ? (
           <div aria-hidden className="hidden wide:block" />
         ) : (
-          <div className="w-full max-w-[640px] wide:w-[min(30vw,560px)] wide:flex-none">
+          <div className="w-full max-w-[640px] phone:shrink-0 wide:w-[min(30vw,560px)] wide:flex-none">
             <PrizeShowcase prize={prize} remaining={remaining} branding={b} big={presentation} emptyText={presentation ? event.description || 'Good luck, everyone!' : 'No prize selected — pick one below or in Admin.'} />
           </div>
         )}
-        <div className={`flex min-h-0 flex-col items-center justify-center gap-[1.8vh] ${bigWheel ? 'wide:contents' : ''}`}>
-          <div className={`relative ${wheelSize} max-w-[1400px]`}>
+        <div className={`flex min-h-0 flex-col items-center justify-center gap-[1.8vh] phone:shrink-0 ${bigWheel ? 'wide:contents' : ''}`}>
+          <div className={`relative ${wheelSize} max-w-[1400px] phone:mt-2`}>
             <Wheel
               ref={wheelRef}
               names={names}
@@ -222,7 +222,7 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
           </div>
           <div className={`flex flex-col items-center gap-[1.8vh] ${bigWheel ? 'wide:items-start wide:self-center' : ''}`}>
             {bigWheel && prize && (
-              <p className="max-w-[26vw] text-center wide:text-left">
+              <p className="max-w-[26vw] text-center phone:max-w-none wide:text-left">
                 <span className="stage-kicker block text-[clamp(0.65rem,1.1vh,0.9rem)] text-fg/55">Now drawing</span>
                 <span className="font-display text-[clamp(1.1rem,2.6vh,2.2rem)] font-semibold leading-tight">{prize.name}</span>
                 {prize.quantity > 1 && <span className="block text-sm text-fg/55">{remaining} of {prize.quantity} left</span>}

@@ -92,7 +92,7 @@ export function BrandingEditor({ value, onChange }: { value: Branding; onChange(
           ))}
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <ColorPicker label="Primary colour" description="Spin button, pointer, wheel" value={value.primaryColor} onChange={(v) => set('primaryColor', v)} />
         <ColorPicker label="Secondary colour" description="Wheel segments, rim" value={value.secondaryColor} onChange={(v) => set('secondaryColor', v)} />
         <ColorPicker label="Accent colour" description="Lights, highlights, confetti" value={value.accentColor} onChange={(v) => set('accentColor', v)} />

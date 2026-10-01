@@ -34,7 +34,7 @@ export function DrawSettingsPage() {
       <div className="space-y-6">
         <Card>
           <h2 className="font-display text-lg font-semibold">Animation style</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Animation style">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Animation style">
             {(Object.keys(MODE_LABELS) as AnimationMode[]).map((m) => {
               const active = m === mode
               return (

@@ -158,7 +158,7 @@ export function ParticipantImporter({ open, onClose, onImport }: Props) {
             )}
           </ul>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {loaded.kind === 'table' && loaded.sheets.length > 1 && (
               <label className="block">
                 <span className="mb-1.5 block text-sm font-semibold">{loaded.source === 'Word table' ? 'Which table?' : 'Which sheet?'}</span>
@@ -199,7 +199,7 @@ export function ParticipantImporter({ open, onClose, onImport }: Props) {
           {people.length > 0 && (
             <div className="rounded-2xl border border-line bg-paper p-4">
               <p className="text-sm font-semibold">Preview</p>
-              <ul className="mt-2 grid gap-x-6 gap-y-1 text-sm text-ink-soft sm:grid-cols-2">
+              <ul className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-sm text-ink-soft sm:grid-cols-2">
                 {people.slice(0, 12).map((p, i) => (
                   <li key={i} className="truncate">{p.name}</li>
                 ))}

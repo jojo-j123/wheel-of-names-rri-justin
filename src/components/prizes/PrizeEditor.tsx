@@ -69,7 +69,7 @@ export function PrizeEditor({ open, prize, onClose, onSave }: Props) {
         </>
       }
     >
-      <div className="grid gap-8 md:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-[1fr_300px]">
         <form id="prize-form" onSubmit={submit} className="space-y-4">
           <TextInput label="Prize name" required value={v.name} onChange={(e) => set('name', e.target.value)} placeholder="e.g. iPhone 17 Pro" maxLength={80} />
           <TextInput label="Description" value={v.description} onChange={(e) => set('description', e.target.value)} placeholder="e.g. Grand prize" />

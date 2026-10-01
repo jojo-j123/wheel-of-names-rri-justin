@@ -47,7 +47,7 @@ export function PasteNames({ open, onClose, existingNames, preventDuplicates, on
         </>
       }
     >
-      <div className="grid gap-5 md:grid-cols-[1fr_240px]">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-[1fr_240px]">
         <TextArea label="Names" rows={12} value={text} onChange={(e) => setText(e.target.value)} placeholder={'John Doe\nJane Smith\nAhmed Ali\nSarah Hassan'} />
         <div className="rounded-2xl border border-line bg-paper p-4">
           <p className="text-sm font-semibold">Preview</p>
