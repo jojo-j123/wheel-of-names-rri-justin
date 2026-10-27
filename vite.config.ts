@@ -11,6 +11,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Tests never talk to the real cloud: the app's Supabase calls go to an in-memory fake (see src/test/fakeSupabase.ts).
+    env: { VITE_SUPABASE_URL: 'https://fake.supabase.test', VITE_SUPABASE_ANON_KEY: 'test-anon-key' },
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
 })

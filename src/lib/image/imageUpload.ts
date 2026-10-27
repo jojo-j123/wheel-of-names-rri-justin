@@ -54,3 +54,8 @@ export async function processImageFile(file: File, opts: ProcessOptions): Promis
   // Some browsers can't encode WEBP and silently return PNG; either is fine.
   return out.length < original.length || scale < 1 ? out : original
 }
+
+/** Photos saved in the old (now frozen) Vercel storage can no longer be loaded — they must be uploaded again. */
+export function isLostImage(url?: string): boolean {
+  return !!url && /\.blob\.vercel-storage\.com\//.test(url)
+}

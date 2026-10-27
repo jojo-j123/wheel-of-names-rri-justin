@@ -1,6 +1,6 @@
 /**
- * End-to-end cloud sync: real /api handlers + real CloudSync engine, with Vercel Blob replaced by
- * an in-memory fake. Simulates several devices talking to the same cloud.
+ * End-to-end cloud sync: real CloudSync engine + real Supabase adapter, with the Supabase project replaced by an
+ * in-memory fake that applies the same rules as the SQL functions. Simulates several devices sharing one cloud.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { EventData, EventTemplate } from '../types'
@@ -8,60 +8,15 @@ import { createDemoEvent } from '../lib/event/demo'
 import { addParticipants, recordWinner } from '../lib/event/operations'
 import { CloudSync, type CloudHost, type CloudStatus } from '../lib/storage/cloudSync'
 import { mergeConflict } from '../lib/storage/merge'
+import { createSupabaseFetch } from '../lib/storage/supabaseBackend'
+import { createFakeSupabase, FAKE_SUPABASE } from './fakeSupabase'
 
-/* ------------------------------------------------------------- fake Vercel Blob */
-
-const blobs = new Map<string, { body: string | Blob; uploadedAt: Date; contentType: string }>()
-let seq = 0
-const BASE = 'https://fake.blob.test/'
-
-vi.mock('@vercel/blob', () => ({
-  put: async (pathname: string, body: string | Blob, opts: { addRandomSuffix?: boolean; contentType?: string }) => {
-    let p = pathname
-    if (opts.addRandomSuffix) {
-      const dot = p.lastIndexOf('.')
-      p = `${p.slice(0, dot)}-${(++seq).toString(36).padStart(6, 'x')}${p.slice(dot)}`
-    }
-    blobs.set(p, { body, uploadedAt: new Date(Date.now() + seq), contentType: opts.contentType ?? '' })
-    return { url: BASE + p, pathname: p }
-  },
-  list: async ({ prefix = '' }: { prefix?: string }) => ({
-    blobs: [...blobs.entries()].filter(([p]) => p.startsWith(prefix)).map(([p, b]) => ({ url: BASE + p, pathname: p, uploadedAt: b.uploadedAt })),
-    hasMore: false,
-  }),
-  del: async (urls: string | string[]) => {
-    for (const u of [urls].flat()) blobs.delete(u.replace(BASE, ''))
-  },
-}))
-
-const events = await import('../../api/events')
-const templates = await import('../../api/templates')
-const state = await import('../../api/state')
-const upload = await import('../../api/upload')
-const health = await import('../../api/health')
-
-let online = true
-const realFetch = globalThis.fetch
-
-/** Routes /api/* to the real handlers and blob URLs to the fake store. */
-const serverFetch: typeof fetch = async (input, init) => {
-  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
-  if (url.startsWith(BASE)) {
-    const b = blobs.get(url.slice(BASE.length))
-    return b ? new Response(b.body) : new Response('missing', { status: 404 })
-  }
-  if (url.startsWith('data:')) return realFetch(url)
-  if (!online) throw new TypeError('Failed to fetch')
-  const req = new Request('https://app.test' + url, init)
-  const path = new URL(req.url).pathname
-  const m = req.method
-  if (path === '/api/health') return health.GET(req)
-  if (path === '/api/state') return state.GET()
-  if (path === '/api/upload' && m === 'POST') return upload.POST(req)
-  if (path === '/api/events') return m === 'PUT' ? events.PUT(req) : events.DELETE(req)
-  if (path === '/api/templates') return m === 'PUT' ? templates.PUT(req) : templates.DELETE(req)
-  return new Response('not found', { status: 404 })
-}
+const fake = createFakeSupabase()
+const serverFetch = () => createSupabaseFetch(FAKE_SUPABASE, 'test-anon-key', fake.net)
+/** Same shape the old /api/state returned, read straight from the fake cloud. */
+const state = { GET: async () => new Response(JSON.stringify(fake.cloudState())) }
+const blobs = { keys: () => [...fake.images.keys()].map((k) => `images/${k}`) }
+let cloudOff = false
 
 /* ------------------------------------------------------------- fake devices */
 
@@ -77,7 +32,7 @@ interface Device {
 function device(initial: EventData[] = []): Device {
   const meta = new Map<string, unknown>()
   const d: Device = {
-    sync: new CloudSync(serverFetch),
+    sync: new CloudSync(cloudOff ? createSupabaseFetch('', '', fake.net) : serverFetch()),
     events: new Map(initial.map((e) => [e.id, e])),
     templates: new Map(),
     status: 'connecting',
@@ -115,49 +70,65 @@ const settle = async () => {
 }
 
 beforeEach(() => {
-  vi.stubGlobal('fetch', serverFetch) // server-side reads of blob URLs go to the fake store
-  blobs.clear()
-  online = true
-  process.env.BLOB_READ_WRITE_TOKEN = 'test-token'
+  vi.stubGlobal('fetch', fake.net) // the app's own cloud singleton talks to the fake too
+  fake.reset()
+  cloudOff = false
 })
 afterEach(() => {
   vi.unstubAllGlobals()
-  delete process.env.BLOB_READ_WRITE_TOKEN
 })
 
-describe('cloud API', () => {
-  it('health reports whether the Blob store is connected', async () => {
-    expect(await (await health.GET(new Request('https://x/api/health'))).json()).toMatchObject({ cloud: true })
-    const check = await (await health.GET(new Request('https://x/api/health?check=1'))).json()
-    expect(check).toMatchObject({ ok: true, steps: { write: 'ok', read: 'ok', delete: 'ok' } })
-    expect([...blobs.keys()].filter((k) => k.startsWith('probe/'))).toHaveLength(0)
-    delete process.env.BLOB_READ_WRITE_TOKEN
-    expect(await (await health.GET(new Request('https://x/api/health'))).json()).toMatchObject({ cloud: false })
+describe('cloud backend (Supabase adapter)', () => {
+  const api = serverFetch()
+  const put = (id: string, body: unknown, base?: number) =>
+    api(`/api/events?id=${id}${base !== undefined ? `&base=${base}` : ''}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: typeof body === 'string' ? body : JSON.stringify(body) })
+
+  it('health reports the cloud is connected, and local-only without config', async () => {
+    expect(await (await api('/api/health')).json()).toMatchObject({ ok: true, cloud: true })
+    expect(await (await createSupabaseFetch('', '', fake.net)('/api/health')).json()).toMatchObject({ cloud: false })
   })
 
-  it('rejects bad input (open API guards)', async () => {
-    const bad = (body: unknown, id = 'evt_abcdef') =>
-      events.PUT(new Request(`https://x/api/events?id=${id}`, { method: 'PUT', body: JSON.stringify(body) }))
-    expect((await bad({}, '../etc')).status).toBe(400)
-    expect((await bad({ id: 'evt_other', participants: [], updatedAt: 1 })).status).toBe(400)
-    expect((await bad({ id: 'evt_abcdef', updatedAt: 1 })).status).toBe(400)
-    expect((await bad({ id: 'evt_abcdef', participants: [], updatedAt: Date.now() + 1e10 })).status).toBe(400)
-    const huge = await events.PUT(new Request('https://x/api/events?id=evt_abcdef', { method: 'PUT', body: 'x'.repeat(5 * 1024 * 1024) }))
-    expect(huge.status).toBe(413)
-    const notImage = await upload.POST(new Request('https://x/api/upload', { method: 'POST', headers: { 'content-type': 'text/html' }, body: '<script>' }))
+  it('rejects bad input', async () => {
+    expect((await put('../etc', { id: '../etc', participants: [], updatedAt: 1 })).status).toBe(400)
+    expect((await put('evt_abcdef', { id: 'evt_other', participants: [], updatedAt: 1 })).status).toBe(400)
+    expect((await put('evt_abcdef', { id: 'evt_abcdef', updatedAt: 1 })).status).toBe(400)
+    expect((await put('evt_abcdef', { id: 'evt_abcdef', participants: [], updatedAt: Date.now() + 1e10 })).status).toBe(400)
+    expect((await put('evt_abcdef', 'x'.repeat(5 * 1024 * 1024))).status).toBe(413)
+    const notImage = await api('/api/upload', { method: 'POST', headers: { 'content-type': 'text/html' }, body: new Blob(['<script>']) })
     expect(notImage.status).toBe(415)
   })
 
-  it('keeps only the newest versions and refuses stale writes', async () => {
+  it('refuses stale writes and keeps the newest version', async () => {
     const e = createDemoEvent()
-    const put = (updatedAt: number) =>
-      events.PUT(new Request(`https://x/api/events?id=${e.id}`, { method: 'PUT', body: JSON.stringify({ ...e, updatedAt }) }))
-    for (const t of [100, 200, 300, 400]) expect((await put(t)).status).toBe(200)
-    expect([...blobs.keys()].filter((k) => k.startsWith(`events/${e.id}/`))).toHaveLength(3)
-    expect((await put(150)).status).toBe(409)
+    for (const t of [100, 200, 300, 400]) expect((await put(e.id, { ...e, updatedAt: t })).status).toBe(200)
+    expect((await put(e.id, { ...e, updatedAt: 150 })).status).toBe(409)
+    expect((await put(e.id, { ...e, updatedAt: 500 }, 300)).status).toBe(409) // someone else saved 400 since
+    expect((await put(e.id, { ...e, updatedAt: 500 }, 400)).status).toBe(200)
     const s = (await (await state.GET()).json()) as { events: EventData[] }
     expect(s.events).toHaveLength(1)
-    expect(s.events[0].updatedAt).toBe(400)
+    expect(s.events[0].updatedAt).toBe(500)
+    expect(fake.history.filter((h) => h.id === e.id).length).toBeGreaterThan(0) // old versions kept as a safety net
+  })
+
+  it('polling is cheap: the full state is only downloaded when something changed', async () => {
+    const e = createDemoEvent()
+    await put(e.id, e)
+    for (let i = 0; i < 5; i++) await api('/api/state')
+    expect(fake.calls.filter((c) => c === 'wheel_state')).toHaveLength(1)
+    await put(e.id, { ...e, updatedAt: e.updatedAt + 1 })
+    await api('/api/state')
+    expect(fake.calls.filter((c) => c === 'wheel_state')).toHaveLength(2)
+  })
+
+  it('stores images once (same bytes, same file) and returns a public URL', async () => {
+    const png = await (await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==')).blob()
+    const up = async () => (await (await api('/api/upload', { method: 'POST', headers: { 'content-type': 'image/png' }, body: png })).json()) as { url: string }
+    const a = await up()
+    const b = await up()
+    expect(a.url).toBe(b.url)
+    expect(a.url).toMatch(/^https:\/\/fake\.supabase\.test\/storage\/v1\/object\/public\/wheel-images\/[0-9a-f]{64}\.png$/)
+    expect(fake.images.size).toBe(1)
+    expect((await fake.net(a.url)).ok).toBe(true)
   })
 })
 
@@ -185,7 +156,7 @@ describe('multi-device sync', () => {
     await settle()
     const images = [...blobs.keys()].filter((k) => k.startsWith('images/'))
     expect(images).toHaveLength(1) // deduplicated
-    expect(a.events.get(e.id)!.prizes[0].image).toMatch(/^https:\/\/fake\.blob\.test\/images\//)
+    expect(a.events.get(e.id)!.prizes[0].image).toMatch(/^https:\/\/fake\.supabase\.test\/storage\/v1\/object\/public\/wheel-images\//)
     const stored = JSON.stringify((await (await state.GET()).json()))
     expect(stored).not.toContain('data:image')
   })
@@ -220,12 +191,12 @@ describe('multi-device sync', () => {
     const a = device([e])
     await start(a)
     await settle()
-    online = false
+    fake.state.online = false
     a.edit(e.id, (x) => addParticipants(x, [{ name: 'Offline Add' }], { preventDuplicates: false }).event)
     await settle()
     expect(a.status).toBe('offline')
     expect(a.events.get(e.id)!.participants.some((p) => p.name === 'Offline Add')).toBe(true) // still on device
-    online = true
+    fake.state.online = true
     a.sync.queueEvent(e.id, 0)
     await settle()
     const cloud = ((await (await state.GET()).json()) as { events: EventData[] }).events[0]
@@ -268,7 +239,7 @@ describe('multi-device sync', () => {
   })
 
   it('runs local-only when the cloud is not connected', async () => {
-    delete process.env.BLOB_READ_WRITE_TOKEN
+    cloudOff = true
     const a = device([createDemoEvent()])
     expect(await start(a)).toBe(false)
     expect(a.status).toBe('disabled')

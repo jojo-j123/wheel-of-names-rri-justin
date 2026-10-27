@@ -1,5 +1,6 @@
 import { Gift, Pencil, Trash2, Trophy } from 'lucide-react'
 import type { Prize } from '../../types'
+import { isLostImage } from '../../lib/image/imageUpload'
 
 interface Props {
   prize: Prize
@@ -27,6 +28,9 @@ export function PrizeCard({ prize, remaining, active, preview, onEdit, onDelete,
         )}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0" />
         <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-bold ${statusCls}`}>{status}</span>
+        {isLostImage(prize.image) && (
+          <span className="absolute right-3 top-3 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-black">Photo lost — re-upload</span>
+        )}
         <div className="absolute inset-x-4 bottom-3 text-white">
           <p className="truncate font-display text-xl font-semibold drop-shadow">{prize.name || 'Prize name'}</p>
           {prize.description && <p className="truncate text-sm text-white/75">{prize.description}</p>}

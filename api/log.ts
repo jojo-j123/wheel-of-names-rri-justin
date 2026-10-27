@@ -1,4 +1,4 @@
-import { json, readBody } from './_lib/blobStore.js'
+import { json, readBody } from './_lib/http.js'
 
 /** POST /api/log — client crash reports, written to Vercel runtime logs. No event data is accepted. */
 export async function POST(request: Request): Promise<Response> {
