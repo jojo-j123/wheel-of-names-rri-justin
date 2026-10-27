@@ -69,6 +69,26 @@ describe('persistence', () => {
     expect(((await mem.loadEvents()) as { id: string }[]).some((e) => e.id === demo.id)).toBe(false)
   })
 
+  it('never deletes a demo event that holds the user\'s own names — it is kept as a normal event', async () => {
+    const mem = createMemoryAdapter()
+    const demo = addParticipants(createDemoEvent(), [{ name: 'Camilla Hope' }, { name: 'Kade Schmitt' }], { preventDuplicates: false }).event
+    await mem.saveEvent(demo)
+    await mem.setMeta('activeEventId', demo.id)
+    configureStorage(mem)
+    useApp.setState({ status: 'loading', events: {}, activeEventId: null })
+    await useApp.getState().init()
+    const s = useApp.getState()
+    const kept = s.events[`${demo.id}-kept`]
+    expect(kept).toBeDefined()
+    expect(kept.isDemo).toBe(false)
+    expect(kept.eventName).toBe('RRI Annual Gala')
+    expect(kept.participants.map((p) => p.name)).toEqual(expect.arrayContaining(['Camilla Hope', 'Kade Schmitt']))
+    expect(kept.prizes).toHaveLength(demo.prizes.length)
+    expect(s.events[demo.id]).toBeUndefined()
+    expect(s.activeEventId).toBe(kept.id)
+    expect(((await mem.loadEvents()) as { id: string }[]).map((e) => e.id)).toContain(kept.id)
+  })
+
   it('a demo-only device ends up on a blank event', async () => {
     const mem = createMemoryAdapter()
     const demo = createDemoEvent()

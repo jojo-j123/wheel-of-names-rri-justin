@@ -1,5 +1,5 @@
 import type { EventData, EventTemplate } from '../../types'
-import { DEFAULT_BRANDING } from '../branding'
+import { DEFAULT_BRANDING, DEFAULT_LOGO } from '../branding'
 import { DEFAULT_ANIMATION_SETTINGS, DEFAULT_WHEEL_SETTINGS, createEmptyEvent } from './defaults'
 import { addParticipants, addPrize } from './operations'
 
@@ -77,3 +77,19 @@ export const BUILT_IN_TEMPLATES: EventTemplate[] = [
     prize('Recognition Award', 5), prize('Extra Day Off', 3),
   ], { wheelSettings: { ...DEFAULT_WHEEL_SETTINGS, removeWinners: false } }),
 ]
+
+const DEMO_NAME_SET = new Set(DEMO_NAMES)
+const DEMO_PRIZE_NAMES = new Set(['iPhone 17 Pro', 'Weekend Getaway', 'Smart Watch', 'Wireless Headphones', 'Smart Speaker', 'Gift Card'])
+
+/**
+ * True only when a demo-flagged event still holds nothing but the built-in sample data
+ * (sample names, sample prizes, default logo). Anything a person added makes it theirs.
+ */
+export function isSampleOnly(e: EventData): boolean {
+  return (
+    e.participants.every((p) => DEMO_NAME_SET.has(p.name)) &&
+    e.prizes.every((p) => DEMO_PRIZE_NAMES.has(p.name) && (!p.image || p.image.startsWith('/demo/'))) &&
+    e.branding.logo === DEFAULT_LOGO &&
+    !e.branding.partnerLogo
+  )
+}

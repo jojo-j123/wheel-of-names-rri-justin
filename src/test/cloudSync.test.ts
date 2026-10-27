@@ -276,14 +276,15 @@ describe('multi-device sync', () => {
 })
 
 describe('demo removal', () => {
-  it('the app deletes the demo event from the cloud but keeps adopted events', async () => {
-    const demo = addParticipants(createDemoEvent(), [{ name: 'Test Name' }], { preventDuplicates: false }).event
+  it('the app deletes a sample-only demo from the cloud, rescues an edited one, keeps adopted events', async () => {
+    const demo = createDemoEvent()
+    const edited = addParticipants(createDemoEvent(), [{ name: 'Test Name' }], { preventDuplicates: false }).event
     const adopted = { ...createDemoEvent(), eventName: 'Our Real Gala', isDemo: false }
-    const old = device([demo, adopted])
+    const old = device([demo, edited, adopted])
     await start(old)
     await settle()
     const before = (await (await state.GET()).json()) as { events: EventData[] }
-    expect(before.events.map((e) => e.id).sort()).toEqual([demo.id, adopted.id].sort())
+    expect(before.events.map((e) => e.id).sort()).toEqual([demo.id, edited.id, adopted.id].sort())
 
     // A phone opens the new version of the app with nothing stored locally.
     const { useApp, configureStorage } = await import('../store/appStore')
@@ -294,9 +295,10 @@ describe('demo removal', () => {
     await settle()
 
     const after = (await (await state.GET()).json()) as { events: EventData[]; deletedEvents: string[] }
-    expect(after.events.map((e) => e.id)).toEqual([adopted.id])
-    expect(Object.keys(useApp.getState().events)).toEqual([adopted.id])
-    expect(useApp.getState().activeEventId).toBe(adopted.id)
+    const keptId = `${edited.id}-kept`
+    expect(after.events.map((e) => e.id).sort()).toEqual([adopted.id, keptId].sort())
+    expect(after.events.find((e) => e.id === keptId)!.participants.some((p) => p.name === 'Test Name')).toBe(true)
+    expect(Object.keys(useApp.getState().events).sort()).toEqual([adopted.id, keptId].sort())
   })
 })
 
