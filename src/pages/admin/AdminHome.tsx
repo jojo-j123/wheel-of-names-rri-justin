@@ -24,11 +24,11 @@ export function AdminHome() {
   ]
   return (
     <div className="space-y-8">
-      {event.isDemo && (
+      {!event.participants.length && !event.prizes.length && (
         <div className="flex flex-col gap-4 rounded-3xl border border-brand/20 bg-brand/[0.06] p-5 sm:flex-row sm:items-center">
           <Sparkles className="shrink-0 text-brand" />
           <p className="flex-1 text-[15px] text-ink-soft">
-            <strong className="text-ink">This is demo data.</strong> Try a spin, then replace the names and prizes — or set up a brand-new event in five quick steps.
+            <strong className="text-ink">This event is empty.</strong> Add your names and prizes below — or set it all up in five quick steps.
           </p>
           <Link to="/admin/setup">
             <Button variant="primary">Set up my event</Button>

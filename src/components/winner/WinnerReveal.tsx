@@ -173,7 +173,7 @@ export function WinnerReveal({ phase, current, batch, branding, reduced, onNameR
           <motion.div
             {...rise(t.prize + 0.15, { scale: 0.9 })}
             className="relative mt-[2.5vh] aspect-square w-[clamp(120px,18vh,260px)] overflow-hidden rounded-3xl ring-1 ring-white/20"
-            style={{ boxShadow: `0 30px 80px -20px ${rgba(primary, 0.65)}` }}
+            style={{ boxShadow: `0 30px 80px -20px ${rgba(primary, 0.65)}`, background: `radial-gradient(circle at 30% 20%, ${primary}, #1a1414)` }}
           >
             <img src={current.prize.image} alt="" className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent" />

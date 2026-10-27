@@ -16,6 +16,14 @@ applyAppearance()
 watchSystemAppearance()
 installStaleChunkRecovery()
 window.addEventListener('error', (e) => reportError(e.error ?? e.message, 'window'))
+// An image that fails to load (offline venue, deleted file) is hidden instead of showing a broken-image icon on the big screen.
+window.addEventListener(
+  'error',
+  (e) => {
+    if (e.target instanceof HTMLImageElement) e.target.style.visibility = 'hidden'
+  },
+  true,
+)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -26,7 +26,6 @@ export function EventCard({ event, active, onOpen, onRename, onDuplicate, onRese
           <p className="truncate font-display text-lg font-semibold">{event.eventName}</p>
           <p className="text-sm text-muted">
             {event.eventDate ? formatDate(event.eventDate) : 'No date'}
-            {event.isDemo && ' · Demo'}
           </p>
         </div>
         {active && (

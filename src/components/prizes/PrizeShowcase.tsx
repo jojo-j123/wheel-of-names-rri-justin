@@ -30,7 +30,11 @@ export function PrizeShowcase({ prize, remaining, branding, big, emptyText }: Pr
           <>
             <div
               className={`relative mt-[1.6vh] hidden overflow-hidden rounded-[28px] ring-1 ring-fg/12 wide:block ${big ? 'w-[min(26vw,44vh)]' : 'w-[min(24vw,34vh)]'} aspect-square`}
-              style={{ boxShadow: `0 40px 80px -30px ${rgba(branding.primaryColor, 0.55)}, 0 0 0 1px rgba(255,255,255,0.04)` }}
+              style={{
+                boxShadow: `0 40px 80px -30px ${rgba(branding.primaryColor, 0.55)}, 0 0 0 1px rgba(255,255,255,0.04)`,
+                // Shows through if the photo can't load (venue Wi-Fi down), instead of an empty box.
+                background: `radial-gradient(circle at 30% 20%, ${branding.primaryColor}, ${branding.secondaryColor})`,
+              }}
             >
               {prize.image ? (
                 <img src={prize.image} alt={prize.name} className="h-full w-full object-cover" />
