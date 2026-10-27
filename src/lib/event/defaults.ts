@@ -39,3 +39,13 @@ export function createEmptyEvent(name = 'New Event'): EventData {
     updatedAt: now,
   }
 }
+
+/** Blank event shown when there are no events yet (or the last one was deleted). */
+export function createStarterEvent(): EventData {
+  return createEmptyEvent('My Event')
+}
+
+/** A blank event nobody has touched yet: no names, prizes or winners, and unchanged since it was created. */
+export function isPristineStarter(e: EventData): boolean {
+  return !e.participants.length && !e.prizes.length && !e.winnerHistory.length && e.updatedAt - e.createdAt < 5000
+}

@@ -6,6 +6,7 @@ import type { EventData } from '../../types'
 import { useDrawController } from '../../hooks/useDrawController'
 import { useReducedMotion } from '../../hooks/useReducedMotion'
 import { useFullscreen } from '../../hooks/useFullscreen'
+import { useWakeLock } from '../../hooks/useWakeLock'
 import { sound } from '../../lib/audio/soundEngine'
 import { brandCssVars, mix, rgba, stagePalette } from '../../lib/branding'
 import { getActivePrize, getEligibleParticipants, nextPrizeWithStock, prizeRemaining, setActivePrize } from '../../lib/event/operations'
@@ -45,6 +46,7 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
   const reduced = useReducedMotion(event.animationSettings.reducedMotion)
   const ctrl = useDrawController(event.id, wheelRef, reduced)
   const fs = useFullscreen()
+  useWakeLock()
   const { phase, current, wheelList, batch, locked } = useDraw()
   const b = event.branding
   const sp = stagePalette(b)
@@ -179,7 +181,6 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
         </div>
         {!presentation && (
           <div className={`flex items-center gap-2 ${b.partnerLogo ? 'phone:mt-1' : ''}`}>
-            {event.isDemo && <span className="hidden rounded-full bg-fg/10 px-3 py-1 text-xs font-semibold text-fg/70 ring-1 ring-fg/10 sm:inline">Demo data</span>}
             <Link
               to="/admin"
               className="inline-flex h-10 items-center gap-2 rounded-xl bg-fg/6 px-4 text-sm font-semibold tracking-wide text-fg/70 ring-1 ring-fg/10 transition hover:bg-fg/12 hover:text-fg"

@@ -5,7 +5,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { ToastHost } from './components/common/Toast'
 import { useApp } from './store/appStore'
 import { toast } from './store/toastStore'
-import { createDemoEvent } from './lib/event/demo'
+import { createStarterEvent } from './lib/event/defaults'
 import { reportError } from './lib/errorReport'
 import { EventScreen } from './pages/EventScreen'
 import { PresentationPage } from './pages/Presentation'
@@ -52,11 +52,11 @@ export default function App() {
       .getState()
       .init()
       .catch((err: unknown) => {
-        // Never leave the operator on an endless spinner: start a temporary demo and say so.
+        // Never leave the operator on an endless spinner: open a temporary blank event and say so.
         reportError(err, 'init')
         if (useApp.getState().status === 'ready') return
-        const demo = createDemoEvent()
-        useApp.setState({ events: { [demo.id]: demo }, activeEventId: demo.id, status: 'ready', saveStatus: 'offline', cloudStatus: 'disabled' })
+        const starter = createStarterEvent()
+        useApp.setState({ events: { [starter.id]: starter }, activeEventId: starter.id, status: 'ready', saveStatus: 'offline', cloudStatus: 'disabled' })
         toast.error('Saved events couldn’t be loaded on this device. Refresh to try again — nothing has been deleted.')
       })
   }, [])

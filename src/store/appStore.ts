@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { EventData, EventTemplate } from '../types'
-import { createDemoEvent } from '../lib/event/demo'
+import { createStarterEvent, isPristineStarter } from '../lib/event/defaults'
 import { sanitizeEvent, sanitizeTemplate } from '../lib/event/sanitize'
 import { createBestAdapter, isQuotaError, withTimeout, type StorageAdapter } from '../lib/storage/storage'
 import { toast } from './toastStore'
@@ -135,9 +135,9 @@ export const useApp = create<AppState>((set, get) => ({
       toast.error('Saved events couldn’t be loaded right now. Refresh the page to try again — nothing has been deleted.')
     }
     if (loadFailed) {
-      // Never write over storage we failed to read: work in a temporary demo until the next refresh.
-      const demo = createDemoEvent()
-      events[demo.id] = demo
+      // Never write over storage we failed to read: work in a temporary blank event until the next refresh.
+      const starter = createStarterEvent()
+      events[starter.id] = starter
     }
     const templates: EventTemplate[] = []
     try {
@@ -154,10 +154,11 @@ export const useApp = create<AppState>((set, get) => ({
     set({ events, templates, persistent: adapter?.persistent ?? false, saveStatus: adapter?.persistent ? 'saved' : 'offline' })
     // A brand-new device first asks the cloud for existing events before creating demo data.
     if (localEmpty && !loadFailed) await cloud.start(cloudHost).catch(() => false)
+    purgeDemoEvents()
     if (!Object.keys(get().events).length) {
-      const demo = createDemoEvent()
-      set({ events: { [demo.id]: demo } })
-      await writeEvent(demo)
+      const starter = createStarterEvent()
+      set({ events: { [starter.id]: starter } })
+      await writeEvent(starter)
     }
     const all = get().events
     if (!activeEventId || !all[activeEventId]) {
@@ -166,7 +167,7 @@ export const useApp = create<AppState>((set, get) => ({
     set({ status: 'ready', activeEventId })
     if (corrupt) toast.error(`${corrupt} saved event(s) were damaged and were skipped.`)
     if (adapter && !adapter.persistent) toast.info('This browser is blocking storage. Your changes will be lost when you close the tab.')
-    if (!localEmpty && !loadFailed) void cloud.start(cloudHost).catch(() => undefined)
+    if (!localEmpty && !loadFailed) void cloud.start(cloudHost).then(() => purgeDemoEvents(), () => undefined)
     if (loadFailed) set({ cloudStatus: 'disabled' })
   },
 
@@ -204,10 +205,10 @@ export const useApp = create<AppState>((set, get) => ({
     if (activeEventId === id) {
       const rest = Object.values(events).sort((a, b) => b.updatedAt - a.updatedAt)
       if (!rest.length) {
-        const demo = createDemoEvent()
-        events[demo.id] = demo
-        void writeEvent(demo)
-        activeEventId = demo.id
+        const starter = createStarterEvent()
+        events[starter.id] = starter
+        void writeEvent(starter)
+        activeEventId = starter.id
       } else activeEventId = rest[0].id
       void adapter?.setMeta('activeEventId', activeEventId).catch(() => undefined)
     }
@@ -251,12 +252,30 @@ if (typeof window !== 'undefined') {
   })
 }
 
+/**
+ * The sample demo event is gone for good: delete any copy still on this device or in the cloud.
+ * Only an untouched demo is removed — saving the event's details (Admin → Event) clears the demo flag, so an event
+ * someone adopted as their own is never deleted.
+ */
+function purgeDemoEvents() {
+  const st = useApp.getState()
+  const demos = Object.values(st.events).filter((e) => e.isDemo)
+  for (const e of demos) st.deleteEvent(e.id)
+  // Never leave the screen on an event that no longer exists.
+  const after = useApp.getState()
+  if (!Object.keys(after.events).length) {
+    const starter = createStarterEvent()
+    useApp.setState({ events: { [starter.id]: starter }, activeEventId: starter.id })
+    void writeEvent(starter)
+  }
+}
+
 /** Bridge between the store and the cloud sync engine. Remote changes never trigger a push back. */
 const cloudHost: CloudHost = {
   getEvent: (id) => useApp.getState().events[id],
   allEvents: () =>
-    // Untouched demo data stays on the device so every new laptop doesn't add another demo to the cloud.
-    Object.values(useApp.getState().events).filter((e) => !(e.isDemo && !e.winnerHistory.length && e.updatedAt - e.createdAt < 5000)),
+    // An untouched blank starter stays on the device so every new phone or laptop doesn't add an empty event to the cloud.
+    Object.values(useApp.getState().events).filter((e) => !e.isDemo && !isPristineStarter(e)),
   getTemplate: (id) => useApp.getState().templates.find((t) => t.id === id),
   allTemplates: () => useApp.getState().templates,
   applyEvents(list) {
@@ -264,6 +283,7 @@ const cloudHost: CloudHost = {
     for (const e of list) events[e.id] = e
     useApp.setState({ events })
     for (const e of list) scheduleWrite(e.id, () => useApp.getState().events[e.id])
+    if (list.some((e) => e.isDemo)) purgeDemoEvents()
   },
   removeEvents(ids) {
     const st = useApp.getState()
@@ -276,9 +296,9 @@ const cloudHost: CloudHost = {
     if (activeEventId && !events[activeEventId]) {
       const rest = Object.values(events).sort((a, b) => b.updatedAt - a.updatedAt)
       if (!rest.length) {
-        const demo = createDemoEvent()
-        events[demo.id] = demo
-        void writeEvent(demo)
+        const starter = createStarterEvent()
+        events[starter.id] = starter
+        void writeEvent(starter)
       }
       activeEventId = Object.values(events).sort((a, b) => b.updatedAt - a.updatedAt)[0].id
       void adapter?.setMeta('activeEventId', activeEventId).catch(() => undefined)
