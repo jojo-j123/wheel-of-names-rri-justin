@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { EventData, EventTemplate } from '../types'
 import { createStarterEvent, isPristineStarter } from '../lib/event/defaults'
+import { isSampleOnly } from '../lib/event/demo'
 import { sanitizeEvent, sanitizeTemplate } from '../lib/event/sanitize'
 import { createBestAdapter, isQuotaError, withTimeout, type StorageAdapter } from '../lib/storage/storage'
 import { toast } from './toastStore'
@@ -154,7 +155,8 @@ export const useApp = create<AppState>((set, get) => ({
     set({ events, templates, persistent: adapter?.persistent ?? false, saveStatus: adapter?.persistent ? 'saved' : 'offline' })
     // A brand-new device first asks the cloud for existing events before creating demo data.
     if (localEmpty && !loadFailed) await cloud.start(cloudHost).catch(() => false)
-    purgeDemoEvents()
+    for (const id of (await withTimeout(adapter?.getMeta<string[]>('rescuedDemos') ?? Promise.resolve(undefined), 4000).catch(() => undefined)) ?? []) rescuedDemos.add(id)
+    retireDemoEvents()
     if (!Object.keys(get().events).length) {
       const starter = createStarterEvent()
       set({ events: { [starter.id]: starter } })
@@ -167,7 +169,7 @@ export const useApp = create<AppState>((set, get) => ({
     set({ status: 'ready', activeEventId })
     if (corrupt) toast.error(`${corrupt} saved event(s) were damaged and were skipped.`)
     if (adapter && !adapter.persistent) toast.info('This browser is blocking storage. Your changes will be lost when you close the tab.')
-    if (!localEmpty && !loadFailed) void cloud.start(cloudHost).then(() => purgeDemoEvents(), () => undefined)
+    if (!localEmpty && !loadFailed) void cloud.start(cloudHost).then(() => retireDemoEvents(), () => undefined)
     if (loadFailed) set({ cloudStatus: 'disabled' })
   },
 
@@ -252,15 +254,35 @@ if (typeof window !== 'undefined') {
   })
 }
 
+/** Demo events already copied to a safe new id on this device (so a cloud pull doesn't copy them twice). */
+const rescuedDemos = new Set<string>()
+
 /**
- * The sample demo event is gone for good: delete any copy still on this device or in the cloud.
- * Only an untouched demo is removed — saving the event's details (Admin → Event) clears the demo flag, so an event
- * someone adopted as their own is never deleted.
+ * Retire the old demo event without ever losing someone's setup.
+ * - Only sample data (sample names/prizes, default logo) → deleted.
+ * - Anything a person added (their names, prizes, photos, logo) → kept as a normal event under a new id, so it can
+ *   never be removed by the demo cleanup or by an earlier deletion of the demo in the cloud.
  */
-function purgeDemoEvents() {
+function retireDemoEvents() {
   const st = useApp.getState()
-  const demos = Object.values(st.events).filter((e) => e.isDemo)
-  for (const e of demos) st.deleteEvent(e.id)
+  for (const e of Object.values(st.events).filter((x) => x.isDemo)) {
+    // Same new id on every device, so two laptops rescuing the same demo end up with one event, not two.
+    const keptId = `${e.id}-kept`
+    if (!isSampleOnly(e) && !rescuedDemos.has(e.id) && !useApp.getState().events[keptId]) {
+      rescuedDemos.add(e.id)
+      void adapter?.setMeta('rescuedDemos', [...rescuedDemos]).catch(() => undefined)
+      const now = Date.now()
+      const kept: EventData = {
+        ...e,
+        id: keptId,
+        isDemo: false,
+        eventName: e.eventName.replace(/\s*[—-]\s*Demo$/i, '').trim() || 'RRI Event',
+        updatedAt: Math.max(now, e.updatedAt + 1),
+      }
+      useApp.getState().addEvent(kept, useApp.getState().activeEventId === e.id)
+    }
+    useApp.getState().deleteEvent(e.id)
+  }
   // Never leave the screen on an event that no longer exists.
   const after = useApp.getState()
   if (!Object.keys(after.events).length) {
@@ -283,7 +305,7 @@ const cloudHost: CloudHost = {
     for (const e of list) events[e.id] = e
     useApp.setState({ events })
     for (const e of list) scheduleWrite(e.id, () => useApp.getState().events[e.id])
-    if (list.some((e) => e.isDemo)) purgeDemoEvents()
+    if (list.some((e) => e.isDemo)) retireDemoEvents()
   },
   removeEvents(ids) {
     const st = useApp.getState()
