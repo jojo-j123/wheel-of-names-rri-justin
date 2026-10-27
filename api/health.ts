@@ -1,27 +1,24 @@
-import { del, put } from '@vercel/blob'
-import { cloudConfigured, json } from './_lib/blobStore.js'
+import { json } from './_lib/http.js'
 
-/**
- * GET /api/health — is cloud saving switched on?
- * GET /api/health?check=1 — full round trip: write a tiny probe file, read it back, delete it.
- */
-export async function GET(request: Request): Promise<Response> {
-  const cloud = cloudConfigured()
-  if (!cloud || !request?.url || !new URL(request.url).searchParams.has('check')) return json({ ok: true, cloud, version: 1 })
+// Same public project the app uses (src/lib/storage/supabaseBackend.ts).
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://cytjcknwgwpbvidrkagj.supabase.co'
+const SUPABASE_ANON_KEY =
+  process.env.VITE_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5dGpja253Z3dwYnZpZHJrYWdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxMzQzNTIsImV4cCI6MjEwODcxMDM1Mn0.O6PsxiFV1nZc1I-zo99ajIQMCDZCO-RZ4lgPMxSLnLA'
+
+/** GET /api/health — can the cloud (Supabase) be reached and read? Open it in a browser to diagnose sync. */
+export async function GET(): Promise<Response> {
   const started = Date.now()
-  const steps: Record<string, string> = {}
   try {
-    const probe = `probe/check-${started}.json`
-    const r = await put(probe, JSON.stringify({ at: started }), { access: 'public', addRandomSuffix: true, contentType: 'application/json' })
-    steps.write = 'ok'
-    const back = await fetch(r.url, { cache: 'no-store' })
-    const body = back.ok ? ((await back.json()) as { at?: number }) : null
-    steps.read = body?.at === started ? 'ok' : `failed (${back.status})`
-    await del(r.url)
-    steps.delete = 'ok'
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/wheel_state`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'content-type': 'application/json' },
+      body: '{}',
+    })
+    if (!r.ok) return json({ ok: false, cloud: 'supabase', error: `HTTP ${r.status}: ${(await r.text()).slice(0, 200)}`, ms: Date.now() - started }, 502)
+    const s = (await r.json()) as { events?: unknown[]; templates?: unknown[] }
+    return json({ ok: true, cloud: 'supabase', events: s.events?.length ?? 0, templates: s.templates?.length ?? 0, ms: Date.now() - started })
   } catch (e) {
-    steps.error = e instanceof Error ? e.message : String(e)
+    return json({ ok: false, cloud: 'supabase', error: e instanceof Error ? e.message : String(e), ms: Date.now() - started }, 502)
   }
-  const ok = steps.write === 'ok' && steps.read === 'ok' && steps.delete === 'ok'
-  return json({ ok, cloud, steps, ms: Date.now() - started }, ok ? 200 : 502)
 }

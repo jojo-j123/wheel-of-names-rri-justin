@@ -1,14 +1,15 @@
 /**
- * Cloud sync (Vercel Blob via /api/*). Local-first:
+ * Cloud sync (Supabase, reached through the small /api/* dialect in supabaseBackend.ts). Local-first:
  *  - every change is saved on the device instantly (IndexedDB), then pushed to the cloud;
  *  - offline or failed pushes retry with backoff and resume when the connection returns;
  *  - other devices' changes are pulled every few seconds and on focus;
  *  - conflicts keep the newer version but never lose recorded winners (see merge.ts).
- * When the cloud isn't connected (local dev, Blob store not set up) the app simply runs local-only.
+ * When the cloud can't be reached (offline, project paused) the app simply runs local-only and retries.
  */
 import type { EventData, EventTemplate } from '../../types'
 import { sanitizeEvent, sanitizeTemplate } from '../event/sanitize'
 import { mergeConflict } from './merge'
+import { createSupabaseFetch } from './supabaseBackend'
 
 export type CloudStatus = 'disabled' | 'connecting' | 'synced' | 'syncing' | 'offline'
 
@@ -382,4 +383,4 @@ export class CloudSync {
   }
 }
 
-export const cloud = new CloudSync()
+export const cloud = new CloudSync(createSupabaseFetch())

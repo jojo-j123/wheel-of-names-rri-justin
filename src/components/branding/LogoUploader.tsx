@@ -1,6 +1,6 @@
 import { ImagePlus, Loader2, RotateCcw, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
-import { ACCEPTED_LOGO_TYPES, processImageFile } from '../../lib/image/imageUpload'
+import { ACCEPTED_LOGO_TYPES, processImageFile, isLostImage } from '../../lib/image/imageUpload'
 import { DEFAULT_LOGO } from '../../lib/branding'
 import { Button } from '../common/Button'
 import { BrandLogo } from './BrandLogo'
@@ -60,6 +60,11 @@ export function LogoUploader({ logo, companyName, onChange, kind = 'main' }: Pro
           <p className="text-xs text-muted">PNG, JPG, WEBP or SVG. Shown as-is, never stretched.</p>
         </div>
       </div>
+      {isLostImage(logo) && !error && (
+        <p className="mt-3 rounded-xl bg-amber-400/15 px-4 py-3 text-sm font-medium text-amber-800 dark:text-amber-300">
+          This logo was in the old cloud storage and can’t be loaded any more. Please upload it again.
+        </p>
+      )}
       {error && <p className="mt-3 rounded-xl bg-danger/8 px-4 py-3 text-sm font-medium text-danger">{error}</p>}
     </div>
   )
