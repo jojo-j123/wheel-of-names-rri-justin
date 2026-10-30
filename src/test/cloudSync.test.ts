@@ -221,6 +221,59 @@ describe('multi-device sync', () => {
     expect(c.events.has(e.id)).toBe(false)
   })
 
+  it('edits made after the event was deleted elsewhere still reach the cloud (never stuck)', async () => {
+    const e = createDemoEvent()
+    const laptop = device([e])
+    await start(laptop)
+    await settle()
+    // Another device deletes the event…
+    const other = device()
+    await start(other)
+    other.events.delete(e.id)
+    other.sync.deleteDoc('events', e.id)
+    await settle()
+    // …then the laptop keeps working on it (newer than the delete).
+    await new Promise((r) => setTimeout(r, 5))
+    laptop.edit(e.id, (x) => ({ ...addParticipants(x, [{ name: 'Saved Later' }], { preventDuplicates: false }).event, updatedAt: Date.now() }))
+    for (let i = 0; i < 4; i++) {
+      await settle()
+      await laptop.sync.pullNow()
+    }
+    await settle()
+    expect(laptop.status).toBe('synced')
+    const cloud = ((await (await state.GET()).json()) as { events: EventData[] }).events.find((x) => x.id === e.id)
+    expect(cloud?.participants.some((p) => p.name === 'Saved Later')).toBe(true)
+    const fresh = device()
+    await start(fresh)
+    expect(fresh.events.get(e.id)?.participants.some((p) => p.name === 'Saved Later')).toBe(true)
+  })
+
+  it('a refused save is retried until it lands, so a device never silently stops syncing', async () => {
+    const e = createDemoEvent()
+    const a = device([e])
+    await start(a)
+    await settle()
+    const b = device()
+    await start(b)
+    // Both edit; one of them is refused as stale at first.
+    a.edit(e.id, (x) => ({ ...addParticipants(x, [{ name: 'From A' }], { preventDuplicates: false }).event, updatedAt: Date.now() }))
+    b.edit(e.id, (x) => ({ ...addParticipants(x, [{ name: 'From B' }], { preventDuplicates: false }).event, updatedAt: Date.now() + 1 }))
+    for (let i = 0; i < 6; i++) {
+      await settle()
+      await a.sync.pullNow()
+      await b.sync.pullNow()
+    }
+    await new Promise((r) => setTimeout(r, 1000)) // merged change is pushed after the normal short delay
+    await settle()
+    await a.sync.pullNow()
+    await settle()
+    const cloud = ((await (await state.GET()).json()) as { events: EventData[] }).events[0]
+    expect(cloud.participants.map((p) => p.name)).toEqual(expect.arrayContaining(['From A', 'From B']))
+    expect(a.events.get(e.id)!.participants.map((p) => p.name)).toEqual(expect.arrayContaining(['From A', 'From B']))
+    expect(a.status).toBe('synced')
+    expect(b.status).toBe('synced')
+  })
+
   it('does not swap data under a spinning wheel', async () => {
     const e = createDemoEvent()
     const a = device([e])
