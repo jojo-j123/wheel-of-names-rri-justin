@@ -178,6 +178,17 @@ export class CloudSync {
     }
     if (removeIds.length) host.removeEvents(removeIds)
 
+    // Local changes to an event the cloud no longer has (deleted elsewhere *before* these edits): the newer edits win.
+    // Forget the old base so the next push is accepted as a fresh save instead of being refused as stale forever.
+    const remoteIds = new Set((data.events ?? []).map((r) => (r as { id?: string })?.id))
+    for (const id of [...this.dirty]) {
+      if (remoteIds.has(id) || removeIds.includes(id) || pendingDeletes.has(`events:${id}`) || !host.getEvent(id)) continue
+      if (this.synced[id] !== undefined) {
+        delete this.synced[id]
+        this.queueEvent(id, 0)
+      }
+    }
+
     const apply: EventData[] = []
     for (const raw of data.events ?? []) {
       const remote = sanitizeEvent(raw)
@@ -199,7 +210,7 @@ export class CloudSync {
         this.synced[remote.id] = remote.updatedAt
       } else {
         // Both sides changed since the last sync: newer fields win, winners from both are kept.
-        const merged = remote.updatedAt >= local.updatedAt ? mergeConflict(remote, local) : mergeConflict(local, remote)
+        const merged = remote.updatedAt >= local.updatedAt ? mergeConflict(remote, local, Date.now(), base) : mergeConflict(local, remote, Date.now(), base)
         apply.push(merged)
         this.synced[remote.id] = remote.updatedAt
         this.queueEvent(remote.id)
@@ -280,6 +291,8 @@ export class CloudSync {
         } else {
           this.pushing.delete(id)
           await this.pullNow() // someone else saved first — pull merges both, then re-pushes
+          // Never leave a refused change behind: if the pull didn't already queue it, try again shortly.
+          if (this.dirty.has(id) && !this.timers.has(id)) this.queueEvent(id, 1500)
         }
       } else if (r.status === 413) {
         // Too large even after image upload: keep it local, don't hammer the server.
