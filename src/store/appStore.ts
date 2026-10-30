@@ -151,10 +151,14 @@ export const useApp = create<AppState>((set, get) => ({
     }
     let activeEventId = (await withTimeout(adapter.getMeta<string>('activeEventId'), 4000).catch(() => undefined)) ?? null
     if (loadFailed) adapter = null // disable writes for this session so nothing real is overwritten
-    const localEmpty = !Object.keys(events).length
+    // A blank event nobody touched doesn't count as "having data": ask the cloud first, exactly like a new device.
+    const localEmpty = !Object.values(events).some((e) => !isPristineStarter(e))
     set({ events, templates, persistent: adapter?.persistent ?? false, saveStatus: adapter?.persistent ? 'saved' : 'offline' })
     // A brand-new device first asks the cloud for existing events before creating demo data.
-    if (localEmpty && !loadFailed) await cloud.start(cloudHost).catch(() => false)
+    if (localEmpty && !loadFailed) {
+      await cloud.start(cloudHost).catch(() => false)
+      dropBlankStarters()
+    }
     for (const id of (await withTimeout(adapter?.getMeta<string[]>('rescuedDemos') ?? Promise.resolve(undefined), 4000).catch(() => undefined)) ?? []) rescuedDemos.add(id)
     retireDemoEvents()
     if (!Object.keys(get().events).length) {
@@ -169,7 +173,19 @@ export const useApp = create<AppState>((set, get) => ({
     set({ status: 'ready', activeEventId })
     if (corrupt) toast.error(`${corrupt} saved event(s) were damaged and were skipped.`)
     if (adapter && !adapter.persistent) toast.info('This browser is blocking storage. Your changes will be lost when you close the tab.')
-    if (!localEmpty && !loadFailed) void cloud.start(cloudHost).then(() => retireDemoEvents(), () => undefined)
+    // If the cloud only connects later (offline at start, or the cloud was waking up), do the first-connect tidy-up then.
+    cloud.onLateStart = () => {
+      retireDemoEvents()
+      dropBlankStarters()
+    }
+    if (!localEmpty && !loadFailed)
+      void cloud.start(cloudHost).then(
+        () => {
+          retireDemoEvents()
+          dropBlankStarters()
+        },
+        () => undefined,
+      )
     if (loadFailed) set({ cloudStatus: 'disabled' })
   },
 
@@ -290,6 +306,30 @@ function retireDemoEvents() {
     useApp.setState({ events: { [starter.id]: starter }, activeEventId: starter.id })
     void writeEvent(starter)
   }
+}
+
+/**
+ * A blank, untouched event made on this device (never sent to the cloud) must not hide real events that arrive from
+ * the cloud — otherwise a second laptop opens on an empty wheel. Runs once, when the cloud first connects: removes the
+ * blank event and opens the most recently changed real one.
+ */
+function dropBlankStarters() {
+  const st = useApp.getState()
+  const all = Object.values(st.events)
+  const real = all.filter((e) => !isPristineStarter(e))
+  const blanks = all.filter((e) => isPristineStarter(e))
+  if (!real.length || !blanks.length) return
+  const events = { ...st.events }
+  for (const b of blanks) {
+    delete events[b.id]
+    void adapter?.deleteEvent(b.id).catch(() => undefined)
+  }
+  let activeEventId = st.activeEventId
+  if (!activeEventId || !events[activeEventId]) {
+    activeEventId = real.sort((a, b) => b.updatedAt - a.updatedAt)[0].id
+    void adapter?.setMeta('activeEventId', activeEventId).catch(() => undefined)
+  }
+  useApp.setState({ events, activeEventId })
 }
 
 /** Bridge between the store and the cloud sync engine. Remote changes never trigger a push back. */

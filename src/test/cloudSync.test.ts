@@ -248,7 +248,7 @@ describe('multi-device sync', () => {
     expect(fresh.events.get(e.id)?.participants.some((p) => p.name === 'Saved Later')).toBe(true)
   })
 
-  it('a refused save is retried until it lands, so a device never silently stops syncing', async () => {
+  it('a refused save is retried until it lands, so a device never silently stops syncing', { timeout: 15000 }, async () => {
     const e = createDemoEvent()
     const a = device([e])
     await start(a)
@@ -263,8 +263,9 @@ describe('multi-device sync', () => {
       await a.sync.pullNow()
       await b.sync.pullNow()
     }
-    await new Promise((r) => setTimeout(r, 1000)) // merged change is pushed after the normal short delay
-    await settle()
+    // The merged change is pushed after the normal short delay; wait for it (up to 5 s).
+    const has = (names: string[]) => names.includes('From A') && names.includes('From B')
+    for (let i = 0; i < 50 && !has((fake.cloudState().events[0] as unknown as EventData).participants.map((p) => p.name)); i++) await new Promise((r) => setTimeout(r, 100))
     await a.sync.pullNow()
     await settle()
     const cloud = ((await (await state.GET()).json()) as { events: EventData[] }).events[0]
@@ -323,6 +324,58 @@ describe('demo removal', () => {
     expect(after.events.map((e) => e.id).sort()).toEqual([adopted.id, keptId].sort())
     expect(after.events.find((e) => e.id === keptId)!.participants.some((p) => p.name === 'Test Name')).toBe(true)
     expect(Object.keys(useApp.getState().events).sort()).toEqual([adopted.id, keptId].sort())
+  })
+})
+
+describe('second device opening the app', () => {
+  it('a blank event left on this device never hides the real event from the cloud', async () => {
+    const real = addParticipants({ ...createDemoEvent(), eventName: 'PWC', isDemo: false }, [{ name: 'Real Guest' }], { preventDuplicates: false }).event
+    const laptop = device([real])
+    await start(laptop)
+    await settle()
+
+    vi.resetModules() // a fresh app, as on a real page load (the cloud connection is one per page)
+    const { useApp, configureStorage } = await import('../store/appStore')
+    const { createMemoryAdapter } = await import('../lib/storage/storage')
+    const { createStarterEvent } = await import('../lib/event/defaults')
+    const mem = createMemoryAdapter()
+    const blank = createStarterEvent()
+    await mem.saveEvent(blank)
+    await mem.setMeta('activeEventId', blank.id) // the old blank event was the one on screen
+    configureStorage(mem)
+    useApp.setState({ status: 'loading', events: {}, activeEventId: null })
+    await useApp.getState().init()
+    await settle()
+
+    const s = useApp.getState()
+    expect(s.activeEventId).toBe(real.id)
+    expect(s.events[real.id].participants.some((p) => p.name === 'Real Guest')).toBe(true)
+    expect(s.events[blank.id]).toBeUndefined()
+  })
+})
+
+describe('cloud waking up slowly', () => {
+  it('keeps trying to connect instead of staying offline until a refresh', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'setInterval'] })
+    try {
+      const e = createDemoEvent()
+      const seed = device([e])
+      await start(seed)
+      await vi.advanceTimersByTimeAsync(2000)
+      fake.state.online = false
+      const late = device()
+      const lateHost = (late as Device & { host: CloudHost }).host
+      let connected = false
+      late.sync.onLateStart = () => (connected = true)
+      expect(await late.sync.start(lateHost)).toBe(false)
+      expect(late.status).toBe('offline')
+      fake.state.online = true
+      await vi.advanceTimersByTimeAsync(11000)
+      expect(connected).toBe(true)
+      expect(late.events.has(e.id)).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

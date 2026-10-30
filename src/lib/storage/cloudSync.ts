@@ -46,6 +46,7 @@ interface StateResponse {
 const PUSH_DELAY_MS = 800
 const POLL_MS = 15000
 const MAX_BACKOFF_MS = 30000
+const START_RETRY_MS = 10000
 
 export class CloudSync {
   private host: CloudHost | null = null
@@ -70,6 +71,9 @@ export class CloudSync {
 
   /** Detects the cloud; if available, performs the first full sync. Resolves quickly when offline. */
   private started: Promise<boolean> | null = null
+  private startRetry: ReturnType<typeof setTimeout> | null = null
+  /** Called when the cloud connects on a retry after the app had already started offline. */
+  onLateStart: (() => void) | null = null
 
   /** Idempotent (React StrictMode may call init twice). */
   start(host: CloudHost): Promise<boolean> {
@@ -80,15 +84,29 @@ export class CloudSync {
   private async doStart(host: CloudHost): Promise<boolean> {
     this.host = host
     host.setStatus('connecting')
+    let reachable = true
     try {
-      const r = await this.api('/api/health', {}, 5000)
+      const r = await this.api('/api/health', {}, 8000)
       const body = r.ok ? ((await r.json()) as { cloud?: boolean }) : null
       this.enabled = !!body?.cloud
+      reachable = r.ok
     } catch {
       this.enabled = false
+      reachable = false
     }
     if (!this.enabled) {
-      host.setStatus('disabled')
+      if (reachable) {
+        host.setStatus('disabled') // no cloud configured: local-only by design
+        return false
+      }
+      // Offline or the cloud is waking up: keep trying instead of staying local-only until the next refresh.
+      host.setStatus('offline')
+      if (typeof window !== 'undefined') {
+        this.startRetry = setTimeout(() => {
+          this.started = null
+          void this.start(host).then((ok) => ok && this.onLateStart?.())
+        }, START_RETRY_MS)
+      }
       return false
     }
     this.synced = (await host.getMeta<Record<string, number>>('cloudSynced')) ?? {}
@@ -114,6 +132,7 @@ export class CloudSync {
   }
 
   stop() {
+    if (this.startRetry) clearTimeout(this.startRetry)
     if (this.pollTimer) clearInterval(this.pollTimer)
     this.timers.forEach(clearTimeout)
     this.timers.clear()
