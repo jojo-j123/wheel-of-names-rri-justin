@@ -38,6 +38,8 @@ export interface WinnerRecord {
   /** True when the winner was removed from future draws by this draw (undo restores them). */
   removedFromPool: boolean
   mode: AnimationMode
+  /** The winner wasn't there to collect: the prize went back for a redraw and they're out of later draws. */
+  absent?: boolean
 }
 
 export interface Branding {

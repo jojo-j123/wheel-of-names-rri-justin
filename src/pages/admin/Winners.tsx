@@ -1,11 +1,11 @@
-import { Download, Trash2, Trophy, Undo2 } from 'lucide-react'
+import { Download, Trash2, Trophy, Undo2, UserX } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Card, PageHeader } from '../../components/admin/PageHeader'
 import { Button } from '../../components/common/Button'
 import { confirm } from '../../components/common/ConfirmDialog'
 import { ParticipantSearch } from '../../components/participants/ParticipantSearch'
 import { useDebounced } from '../../hooks/useDebounced'
-import { clearWinnerHistory, deleteWinnerRecord, undoLastDraw } from '../../lib/event/operations'
+import { clearWinnerHistory, deleteWinnerRecord, markWinnerAbsent, markWinnerPresent, undoLastDraw } from '../../lib/event/operations'
 import { downloadText, safeFileName, winnersToCsv } from '../../lib/export/exporters'
 import { formatDateTime, plural } from '../../lib/format'
 import { useActiveEvent, useApp } from '../../store/appStore'
@@ -98,7 +98,10 @@ export function WinnersPage() {
               <li key={w.id} className="flex items-center gap-4 px-4 py-4 sm:px-5">
                 <span className="tabular grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-brand/10 font-display font-semibold text-brand">#{w.drawNumber}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[16px] font-semibold">{w.participantName}</p>
+                  <p className={`truncate text-[16px] font-semibold ${w.absent ? 'text-muted line-through' : ''}`}>
+                    {w.participantName}
+                    {w.absent && <span className="ml-2 rounded-full bg-amber-400/20 px-2 py-0.5 align-middle text-xs font-bold text-amber-800 no-underline dark:text-amber-300">Absent — prize redrawn</span>}
+                  </p>
                   <p className="flex items-center gap-1.5 truncate text-sm text-ink-soft">
                     <Trophy size={14} className="shrink-0 text-brand" /> {w.prizeName}
                   </p>
@@ -107,6 +110,21 @@ export function WinnersPage() {
                     {!w.removedFromPool && ' · stayed in the draw'}
                   </p>
                 </div>
+                <button
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-ink-soft ring-1 ring-line transition hover:bg-ink/5"
+                  onClick={() => {
+                    if (w.absent) {
+                      mutate(event.id, (e) => markWinnerPresent(e, w.id), { immediate: true })
+                      toast.success(`${w.participantName} counts as a winner again.`)
+                    } else {
+                      mutate(event.id, (e) => markWinnerAbsent(e, w.id), { immediate: true })
+                      toast.success(`${w.participantName} marked absent — ${w.prizeName} is back for a redraw.`)
+                    }
+                  }}
+                >
+                  {w.absent ? <Undo2 size={15} /> : <UserX size={15} />}
+                  <span className="hidden sm:inline">{w.absent ? 'Was here after all' : 'Mark absent'}</span>
+                </button>
                 <button
                   className="rounded-lg p-2.5 text-muted transition hover:bg-danger/10 hover:text-danger"
                   aria-label={`Delete winner record ${w.drawNumber}`}

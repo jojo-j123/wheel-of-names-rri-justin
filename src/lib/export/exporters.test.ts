@@ -36,6 +36,14 @@ describe('import / export', () => {
     expect('partnerLogoBg' in plain.branding).toBe(false)
   })
 
+  it('keeps absent winners marked after save/sync/export', () => {
+    let e = createDemoEvent()
+    e = recordWinner(e, { participant: e.participants[0], prize: e.prizes[0], mode: 'dramatic', removeFromPool: true }).event
+    e = { ...e, winnerHistory: e.winnerHistory.map((w) => ({ ...w, absent: true })) }
+    expect(eventFromJson(eventToJson(e)).winnerHistory[0].absent).toBe(true)
+    expect(winnersToCsv(e.winnerHistory)).toContain('Absent — prize redrawn')
+  })
+
   it('accepts a bare event object too', () => {
     const e = createDemoEvent()
     expect(eventFromJson(JSON.stringify(e)).id).toBe(e.id)

@@ -3,7 +3,7 @@ import { planDraw } from '../draw/selectWinner'
 import { createEmptyEvent } from './defaults'
 import { BUILT_IN_TEMPLATES, createDemoEvent } from './demo'
 import {
-  addParticipants, addPrize, clearParticipants, clearWinnerHistory, deleteWinnerRecord, duplicateEvent, duplicateKey, ensureActivePrize,
+  addParticipants, addPrize, markWinnerAbsent, markWinnerPresent, clearParticipants, clearWinnerHistory, deleteWinnerRecord, duplicateEvent, duplicateKey, ensureActivePrize,
   eventFromTemplate, eventToTemplate, findDuplicateIds, getActivePrize, getEligibleParticipants, prizeRemaining, recordWinner, removeDuplicates,
   removeParticipants, removePrize, resetEvent, setActivePrize, setPrizeEnabled, shuffleParticipants, undoLastDraw, updateParticipant, FriendlyError,
 } from './operations'
@@ -168,6 +168,35 @@ describe('draws, winner removal and undo', () => {
     expect(counts.size).toBe(10)
     const chi = [...counts.values()].reduce((s, o) => s + (o - 500) ** 2 / 500, 0)
     expect(chi).toBeLessThan(33.7)
+  })
+})
+
+describe('absent winners (redraw)', () => {
+  it('gives the prize back without using up the quantity and keeps the person out of later draws', () => {
+    let e = withPeople(5)
+    e = addPrize(e, { name: 'Speaker', quantity: 1 }).event
+    const prize = e.prizes[0]
+    const winner = e.participants[0]
+    e = recordWinner(e, { participant: winner, prize, mode: 'dramatic', removeFromPool: false }).event
+    expect(prizeRemaining(e, e.prizes[0])).toBe(0)
+    const rec = e.winnerHistory[0]
+
+    e = markWinnerAbsent(e, rec.id)
+    expect(prizeRemaining(e, e.prizes[0])).toBe(1) // back for the redraw
+    expect(getEligibleParticipants(e).some((p) => p.id === winner.id)).toBe(false) // absent → out, even though winners normally stay in
+    expect(e.winnerHistory[0].absent).toBe(true)
+    expect(e.auditLog.at(-1)!.message).toMatch(/absent/)
+
+    // Redraw for the same prize with someone else.
+    e = recordWinner(e, { participant: e.participants[1], prize, mode: 'dramatic', removeFromPool: false }).event
+    expect(prizeRemaining(e, e.prizes[0])).toBe(0)
+    expect(e.winnerHistory.map((w) => w.drawNumber)).toEqual([1, 2])
+
+    // Marking absent twice changes nothing; "was here after all" makes it count again.
+    expect(markWinnerAbsent(e, rec.id)).toBe(e)
+    const back = markWinnerPresent(e, rec.id)
+    expect('absent' in back.winnerHistory[0]).toBe(false)
+    expect(getEligibleParticipants(back).some((p) => p.id === winner.id)).toBe(true) // winners stay in for this event
   })
 })
 

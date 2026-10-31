@@ -73,6 +73,7 @@ function sanitizeWinner(v: unknown, eventId: string): WinnerRecord | null {
     timestamp: num(v.timestamp, Date.now()),
     removedFromPool: bool(v.removedFromPool, true),
     mode,
+    ...(v.absent === true ? { absent: true } : {}),
   }
 }
 

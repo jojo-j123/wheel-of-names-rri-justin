@@ -15,6 +15,8 @@ interface Props {
   onCelebrate(): void
   onContinue(): void
   onClose(): void
+  /** Winner isn't here: prize goes back, draw again. */
+  onAbsent?(): void
 }
 
 /** Stage-show timing (seconds from the start of WINNER_REVEAL). */
@@ -27,7 +29,7 @@ function choreography(grand: boolean, preReveal: number, reduced: boolean) {
   return { tease: 0, kicker: 0.05, name: 0.4, prize: 1.0, logo: 1.5, celebrate: 0.7 }
 }
 
-export function WinnerReveal({ phase, current, batch, branding, reduced, onNameRevealed, onCelebrate, onContinue, onClose }: Props) {
+export function WinnerReveal({ phase, current, batch, branding, reduced, onNameRevealed, onCelebrate, onContinue, onClose, onAbsent }: Props) {
   const grand = current.mode === 'grand'
   const started = phase !== 'SUSPENSE'
   const t = choreography(grand, current.timings.preReveal, reduced)
@@ -203,6 +205,15 @@ export function WinnerReveal({ phase, current, batch, branding, reduced, onNameR
                 <button onClick={onClose} className="rounded-full bg-white/10 px-6 py-3 font-semibold text-white/85 ring-1 ring-white/15 transition hover:bg-white/15">
                   {more ? 'Stop here' : 'Done'}
                 </button>
+                {onAbsent && current.record && (
+                  <button
+                    onClick={onAbsent}
+                    title="The winner isn’t here. The prize goes back (quantity unchanged) and the wheel spins again."
+                    className="rounded-full px-5 py-3 text-sm font-semibold text-white/60 ring-1 ring-white/15 transition hover:bg-white/10 hover:text-white"
+                  >
+                    Not here? Draw again
+                  </button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

@@ -35,7 +35,7 @@ export function EventCard({ event, active, onOpen, onRename, onDuplicate, onRese
         )}
       </div>
       <p className="mt-4 text-sm text-ink-soft">
-        {plural(event.participants.length, 'participant')} · {plural(event.prizes.length, 'prize')} · {plural(event.winnerHistory.length, 'winner')}
+        {plural(event.participants.length, 'participant')} · {plural(event.prizes.length, 'prize')} · {plural(event.winnerHistory.filter((w) => !w.absent).length, 'winner')}
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-1 border-t border-line pt-3">
         {!active && (

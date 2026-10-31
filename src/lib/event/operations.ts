@@ -160,7 +160,8 @@ export function removeDuplicates(event: EventData): { event: EventData; removed:
 /** Participants taken out of the pool by past draws. Derived from history, so undo "just works". */
 export function removedParticipantIds(event: EventData): Set<string> {
   const s = new Set<string>()
-  for (const w of event.winnerHistory) if (w.removedFromPool) s.add(w.participantId)
+  // Absent winners are out of later draws even when winners normally stay in.
+  for (const w of event.winnerHistory) if (w.removedFromPool || w.absent) s.add(w.participantId)
   return s
 }
 
@@ -227,7 +228,8 @@ export function removePrize(event: EventData, id: string): EventData {
 
 export function prizeAwardedCount(event: EventData, prizeId: string): number {
   let n = 0
-  for (const w of event.winnerHistory) if (w.prizeId === prizeId) n++
+  // An absent winner's prize went back for a redraw, so it doesn't use up the quantity.
+  for (const w of event.winnerHistory) if (w.prizeId === prizeId && !w.absent) n++
   return n
 }
 
@@ -308,6 +310,31 @@ export function deleteWinnerRecord(event: EventData, id: string): EventData {
     touch({ ...event, winnerHistory: event.winnerHistory.filter((w) => w.id !== id) }),
     `Winner record #${rec.drawNumber} (${rec.participantName}) was deleted.`,
   )
+}
+
+/**
+ * The winner isn't here (left early / absent): their prize goes back for a redraw without using up the
+ * quantity, and they're taken out of later draws. Reversible with `markWinnerPresent`.
+ */
+export function markWinnerAbsent(event: EventData, id: string): EventData {
+  const rec = event.winnerHistory.find((w) => w.id === id)
+  if (!rec || rec.absent) return event
+  return appendAudit(
+    touch({ ...event, winnerHistory: event.winnerHistory.map((w) => (w.id === id ? { ...w, absent: true } : w)) }),
+    `${rec.participantName} (draw #${rec.drawNumber}) was absent — ${rec.prizeName} went back for a redraw.`,
+  )
+}
+
+/** Undo "absent": the record counts as a win again (uses the prize again). */
+export function markWinnerPresent(event: EventData, id: string): EventData {
+  const rec = event.winnerHistory.find((w) => w.id === id)
+  if (!rec || !rec.absent) return event
+  const next = event.winnerHistory.map((w) => {
+    if (w.id !== id) return w
+    const { absent: _absent, ...present } = w // eslint-disable-line @typescript-eslint/no-unused-vars
+    return present
+  })
+  return appendAudit(touch({ ...event, winnerHistory: next }), `${rec.participantName} (draw #${rec.drawNumber}) was marked present again.`)
 }
 
 export function clearWinnerHistory(event: EventData): EventData {
