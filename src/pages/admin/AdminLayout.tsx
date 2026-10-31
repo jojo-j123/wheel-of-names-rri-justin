@@ -15,7 +15,10 @@ export function AdminLayout() {
   const event = useActiveEvent()
   const present = usePresent()
   const { pathname } = useLocation()
-  useEffect(() => window.scrollTo(0, 0), [pathname])
+  // Braces matter: newer Chrome returns a Promise from scrollTo, and an effect may only return a cleanup function.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
   if (!event) return null
   const b = event.branding
   return (

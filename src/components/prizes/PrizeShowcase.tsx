@@ -23,7 +23,10 @@ export function PrizeShowcase({ prize, remaining, branding, big, emptyText }: Pr
         transition={{ duration: 0.45, ease: 'easeOut' }}
         className="flex w-full flex-col items-center text-center wide:items-start wide:text-left"
       >
-        <p className="stage-kicker text-[clamp(0.7rem,1.2vh,1rem)]" style={{ color: branding.stageTheme === 'light' ? mix(branding.accentColor, '#000000', 0.55) : branding.accentColor }}>
+        <p
+          className={`stage-kicker ${prize ? 'text-[clamp(0.7rem,1.2vh,1rem)]' : big ? 'text-[clamp(1rem,2.4vh,2.2rem)]' : 'text-[clamp(0.85rem,1.6vh,1.3rem)]'}`}
+          style={{ color: branding.stageTheme === 'light' ? mix(branding.accentColor, '#000000', 0.55) : branding.accentColor }}
+        >
           {prize ? 'Now drawing' : 'Ready to draw'}
         </p>
         {prize ? (
@@ -65,7 +68,7 @@ export function PrizeShowcase({ prize, remaining, branding, big, emptyText }: Pr
             )}
           </>
         ) : (
-          <p className="mt-2 max-w-sm text-fg/55">{emptyText}</p>
+          <p className={`mt-[1.2vh] font-display font-semibold leading-tight tracking-tight text-fg/85 ${big ? 'max-w-[34vw] text-[clamp(2rem,5.5vh,5rem)]' : 'max-w-md text-[clamp(1.4rem,3.4vh,2.6rem)]'}`}>{emptyText}</p>
         )}
       </motion.div>
     </AnimatePresence>

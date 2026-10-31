@@ -45,15 +45,22 @@ export const Wheel = memo(
           onSpeed={props.onSpeed}
         />
         <WheelPointer ref={pointerRef} color={branding.primaryColor} accent={branding.accentColor} />
-        {/* Hub: static (the logo never rotates). */}
-        <div className="absolute left-1/2 top-1/2 z-10 h-[21%] w-[21%] -translate-x-1/2 -translate-y-1/2 rounded-full p-[5%] shadow-[0_10px_30px_rgba(0,0,0,0.6)]"
-          style={{ background: `linear-gradient(145deg, #ffffff, #d9d4d0)` }}>
-          {branding.hubLogo === 'partner' && branding.partnerLogo ? (
-            <BrandLogo logo={branding.partnerLogo} companyName={branding.partnerName || 'Partner'} variant="badge" className="h-full w-full ring-1 ring-black/10" />
-          ) : (
-            <BrandLogo logo={branding.logo} companyName={branding.companyName} variant="badge" className="h-full w-full ring-1 ring-black/10" />
-          )}
-        </div>
+        {/* Hub: static (the logo never rotates). 'none' leaves a plain centre cap. */}
+        {branding.hubLogo === 'none' ? (
+          <div
+            className="absolute left-1/2 top-1/2 z-10 h-[11%] w-[11%] -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.6)] ring-2 ring-white/70"
+            style={{ background: `radial-gradient(circle at 35% 30%, ${branding.primaryColor}, ${branding.secondaryColor})` }}
+          />
+        ) : (
+          <div className="absolute left-1/2 top-1/2 z-10 h-[21%] w-[21%] -translate-x-1/2 -translate-y-1/2 rounded-full p-[5%] shadow-[0_10px_30px_rgba(0,0,0,0.6)]"
+            style={{ background: `linear-gradient(145deg, #ffffff, #d9d4d0)` }}>
+            {branding.hubLogo === 'partner' && branding.partnerLogo ? (
+              <BrandLogo logo={branding.partnerLogo} companyName={branding.partnerName || 'Partner'} variant="badge" dark={branding.partnerLogoBg === 'black'} className="h-full w-full ring-1 ring-black/10" />
+            ) : (
+              <BrandLogo logo={branding.logo} companyName={branding.companyName} variant="badge" className="h-full w-full ring-1 ring-black/10" />
+            )}
+          </div>
+        )}
       </div>
     )
   }),

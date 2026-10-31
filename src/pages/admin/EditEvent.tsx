@@ -12,7 +12,9 @@ export function EditEventPage() {
   const event = useActiveEvent()!
   const mutate = useApp((s) => s.mutateEvent)
   const [v, setV] = useState({ name: event.eventName, date: event.eventDate, description: event.description, company: event.branding.companyName })
-  useEffect(() => setV({ name: event.eventName, date: event.eventDate, description: event.description, company: event.branding.companyName }), [event.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setV({ name: event.eventName, date: event.eventDate, description: event.description, company: event.branding.companyName })
+  }, [event.id]) // eslint-disable-line react-hooks/exhaustive-deps
   useUnsavedWarning(v.name !== event.eventName || v.date !== event.eventDate || v.description !== event.description || v.company !== event.branding.companyName)
   const submit = (e: React.FormEvent) => {
     e.preventDefault()

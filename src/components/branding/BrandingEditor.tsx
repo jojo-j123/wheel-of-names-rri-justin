@@ -9,43 +9,49 @@ export function BrandingEditor({ value, onChange }: { value: Branding; onChange(
   return (
     <div className="space-y-6">
       <LogoUploader logo={value.logo} companyName={value.companyName} onChange={(logo) => set('logo', logo ?? value.logo)} />
+      <Choice
+        label={`${value.companyName || 'RRI'} logo on the big screen`}
+        value={value.showMainLogo === false ? 'hide' : 'show'}
+        options={[
+          { v: 'show', label: 'Show' },
+          { v: 'hide', label: 'Hide' },
+        ]}
+        onPick={(v) => set('showMainLogo', v === 'show' ? undefined : false)}
+      />
       <div className="space-y-4 rounded-2xl border border-line bg-field p-4">
         <LogoUploader
           kind="partner"
           logo={value.partnerLogo}
           companyName={value.partnerName || 'Partner'}
-          onChange={(partnerLogo) => onChange({ ...value, partnerLogo, hubLogo: partnerLogo ? value.hubLogo : 'main' })}
+          onChange={(partnerLogo) =>
+            onChange({ ...value, partnerLogo, hubLogo: partnerLogo || value.hubLogo !== 'partner' ? value.hubLogo : 'main' })
+          }
         />
         {value.partnerLogo && (
           <>
             <TextInput label="Partner name" value={value.partnerName ?? ''} onChange={(e) => set('partnerName', e.target.value)} placeholder="e.g. Acme Corp" maxLength={60} />
-            <div>
-              <p className="mb-2 text-sm font-semibold">Logo in the centre of the wheel</p>
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Logo in the centre of the wheel">
-                {(
-                  [
-                    { v: 'main', label: `${value.companyName || 'RRI'} logo` },
-                    { v: 'partner', label: `${value.partnerName || 'Partner'} logo` },
-                  ] as const
-                ).map((o) => {
-                  const active = (value.hubLogo ?? 'main') === o.v
-                  return (
-                    <button
-                      key={o.v}
-                      role="radio"
-                      aria-checked={active}
-                      onClick={() => set('hubLogo', o.v)}
-                      className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${active ? 'border-brand bg-brand text-on-brand' : 'border-line bg-field hover:border-ink/25'}`}
-                    >
-                      {o.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            <Choice
+              label="Card behind the partner logo"
+              value={value.partnerLogoBg === 'black' ? 'black' : 'white'}
+              options={[
+                { v: 'white', label: 'White' },
+                { v: 'black', label: 'Black' },
+              ]}
+              onPick={(v) => set('partnerLogoBg', v === 'black' ? 'black' : undefined)}
+            />
           </>
         )}
       </div>
+      <Choice
+        label="Logo in the centre of the wheel"
+        value={value.hubLogo === 'partner' && !value.partnerLogo ? 'main' : (value.hubLogo ?? 'main')}
+        options={[
+          { v: 'main', label: `${value.companyName || 'RRI'} logo` },
+          ...(value.partnerLogo ? [{ v: 'partner' as const, label: `${value.partnerName || 'Partner'} logo` }] : []),
+          { v: 'none', label: 'No logo' },
+        ]}
+        onPick={(v) => set('hubLogo', v)}
+      />
       <div>
         <p className="mb-2 text-sm font-semibold">Big-screen look</p>
         <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Big-screen look">
@@ -97,6 +103,32 @@ export function BrandingEditor({ value, onChange }: { value: Branding; onChange(
         <ColorPicker label="Secondary colour" description="Wheel segments, rim" value={value.secondaryColor} onChange={(v) => set('secondaryColor', v)} />
         <ColorPicker label="Accent colour" description="Lights, highlights, confetti" value={value.accentColor} onChange={(v) => set('accentColor', v)} />
         <ColorPicker label="Background colour" description={value.stageTheme === "light" ? "Used in the dark big-screen look" : "Big-screen background"} value={value.backgroundColor} onChange={(v) => set('backgroundColor', v)} />
+      </div>
+    </div>
+  )
+}
+
+/** A row of pill buttons that behave like radio buttons. */
+function Choice<V extends string>({ label, value, options, onPick }: { label: string; value: V; options: { v: V; label: string }[]; onPick(v: V): void }) {
+  return (
+    <div>
+      <p className="mb-2 text-sm font-semibold">{label}</p>
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
+        {options.map((o) => {
+          const active = value === o.v
+          return (
+            <button
+              key={o.v}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onPick(o.v)}
+              className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${active ? 'border-brand bg-brand text-on-brand' : 'border-line bg-field hover:border-ink/25'}`}
+            >
+              {o.label}
+            </button>
+          )
+        })}
       </div>
     </div>
   )
