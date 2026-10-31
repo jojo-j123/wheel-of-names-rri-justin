@@ -24,11 +24,11 @@ export function BrandPreview({ branding, eventName }: { branding: Branding; even
       }}
     >
       <div className="flex items-center gap-3">
-        <BrandLogo logo={branding.logo} companyName={branding.companyName} variant="badge" className="h-10 w-10" />
+        {branding.showMainLogo !== false && <BrandLogo logo={branding.logo} companyName={branding.companyName} variant="badge" className="h-10 w-10" />}
         {branding.partnerLogo && (
           <>
-            <span className="text-sm opacity-50">×</span>
-            <PartnerLogo logo={branding.partnerLogo} name={branding.partnerName} className="h-10 text-[10px]" />
+            {branding.showMainLogo !== false && <span className="text-sm opacity-50">×</span>}
+            <PartnerLogo logo={branding.partnerLogo} name={branding.partnerName} dark={branding.partnerLogoBg === 'black'} className="h-10 text-[10px]" />
           </>
         )}
         <div className="min-w-0">
@@ -38,14 +38,22 @@ export function BrandPreview({ branding, eventName }: { branding: Branding; even
       </div>
       <div className="relative mx-auto mt-5 aspect-square w-[70%]">
         <canvas ref={canvasRef} className="h-full w-full" />
-        <div className="absolute left-1/2 top-1/2 h-[22%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white p-[4%] shadow-lg">
-          <BrandLogo
-            logo={branding.hubLogo === 'partner' && branding.partnerLogo ? branding.partnerLogo : branding.logo}
-            companyName={branding.companyName}
-            variant="badge"
-            className="h-full w-full"
+        {branding.hubLogo === 'none' ? (
+          <div
+            className="absolute left-1/2 top-1/2 h-[11%] w-[11%] -translate-x-1/2 -translate-y-1/2 rounded-full shadow-lg ring-2 ring-white/70"
+            style={{ background: `radial-gradient(circle at 35% 30%, ${branding.primaryColor}, ${branding.secondaryColor})` }}
           />
-        </div>
+        ) : (
+          <div className="absolute left-1/2 top-1/2 h-[22%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white p-[4%] shadow-lg">
+            <BrandLogo
+              logo={branding.hubLogo === 'partner' && branding.partnerLogo ? branding.partnerLogo : branding.logo}
+              companyName={branding.companyName}
+              variant="badge"
+              dark={branding.hubLogo === 'partner' && branding.partnerLogoBg === 'black'}
+              className="h-full w-full"
+            />
+          </div>
+        )}
         <div className="absolute left-1/2 top-0 h-0 w-0 -translate-x-1/2 -translate-y-1 border-x-[10px] border-t-[18px] border-x-transparent" style={{ borderTopColor: branding.primaryColor }} />
       </div>
       <div className="mt-5 flex justify-center">

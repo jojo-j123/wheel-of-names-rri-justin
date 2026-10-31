@@ -54,8 +54,12 @@ export interface Branding {
   /** Optional second logo for co-branded events ("RRI × Client"). Data URL or URL. */
   partnerLogo?: string
   partnerName?: string
-  /** Which logo sits in the centre of the wheel. */
-  hubLogo?: 'main' | 'partner'
+  /** Which logo sits in the centre of the wheel ('none' = plain centre). */
+  hubLogo?: 'main' | 'partner' | 'none'
+  /** Show the main (RRI) logo in the big-screen header. Default true. */
+  showMainLogo?: boolean
+  /** Card behind the partner logo: white (default) or black, for logos made for dark backgrounds. */
+  partnerLogoBg?: 'white' | 'black'
 }
 
 export type StageTheme = 'dark' | 'light'

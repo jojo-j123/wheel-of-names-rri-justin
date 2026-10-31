@@ -24,6 +24,18 @@ describe('import / export', () => {
     expect(bad.branding.hubLogo).toBeUndefined()
   })
 
+  it('keeps the logo display choices (hide RRI logo, no centre logo, black partner card)', () => {
+    const e = createDemoEvent()
+    e.branding = { ...e.branding, showMainLogo: false, hubLogo: 'none', partnerLogo: 'data:image/png;base64,AAAA', partnerLogoBg: 'black' }
+    const back = eventFromJson(eventToJson(e))
+    expect(back.branding).toMatchObject({ showMainLogo: false, hubLogo: 'none', partnerLogoBg: 'black' })
+    // Without a partner logo, "no centre logo" still sticks; defaults add no extra keys.
+    const plain = eventFromJson(eventToJson({ ...e, branding: { ...e.branding, partnerLogo: undefined, partnerLogoBg: undefined, showMainLogo: undefined } }))
+    expect(plain.branding.hubLogo).toBe('none')
+    expect('showMainLogo' in plain.branding).toBe(false)
+    expect('partnerLogoBg' in plain.branding).toBe(false)
+  })
+
   it('accepts a bare event object too', () => {
     const e = createDemoEvent()
     expect(eventFromJson(JSON.stringify(e)).id).toBe(e.id)

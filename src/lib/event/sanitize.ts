@@ -88,14 +88,18 @@ export function sanitizeBranding(v: unknown): Branding {
     backgroundColor: color('backgroundColor'),
     textColor: color('textColor'),
     stageTheme: b.stageTheme === 'light' ? 'light' : 'dark',
-    // Partner branding only exists when a partner logo is set (older events stay unchanged).
+    // Optional settings are only written when used, so older events stay byte-for-byte unchanged.
+    ...(b.showMainLogo === false ? { showMainLogo: false } : {}),
     ...(sanitizeImage(b.partnerLogo)
       ? {
           partnerLogo: sanitizeImage(b.partnerLogo),
           partnerName: cleanName(str(b.partnerName)) || undefined,
-          hubLogo: b.hubLogo === 'partner' ? ('partner' as const) : ('main' as const),
+          hubLogo: b.hubLogo === 'partner' ? ('partner' as const) : b.hubLogo === 'none' ? ('none' as const) : ('main' as const),
+          ...(b.partnerLogoBg === 'black' ? { partnerLogoBg: 'black' as const } : {}),
         }
-      : {}),
+      : b.hubLogo === 'none'
+        ? { hubLogo: 'none' as const }
+        : {}),
   }
 }
 

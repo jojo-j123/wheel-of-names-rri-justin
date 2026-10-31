@@ -7,6 +7,8 @@ interface Props {
   /** 'full' shows the whole image untouched. 'badge' frames it in a circle (for hubs / dark stage). */
   variant?: 'full' | 'badge'
   className?: string
+  /** Black card instead of white (for logos designed for dark backgrounds). */
+  dark?: boolean
 }
 
 /**
@@ -14,11 +16,11 @@ interface Props {
  * For the circular badge we only frame the default file around its own white disc
  * (the mark itself is untouched); custom logos are letter-boxed on white.
  */
-export const BrandLogo = memo(function BrandLogo({ logo, companyName, variant = 'full', className = '' }: Props) {
+export const BrandLogo = memo(function BrandLogo({ logo, companyName, variant = 'full', className = '', dark = false }: Props) {
   if (variant === 'badge') {
     const isDefault = logo === DEFAULT_LOGO
     return (
-      <div className={`relative overflow-hidden rounded-full bg-white ${className}`}>
+      <div className={`relative overflow-hidden rounded-full ${dark ? 'bg-black' : 'bg-white'} ${className}`}>
         {isDefault ? (
           <img
             src={logo}

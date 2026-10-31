@@ -135,6 +135,8 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
 
   // Prize panel can be hidden for a much bigger wheel ("big wheel" layout).
   const bigWheel = event.wheelSettings.showPrize === false
+  // The main (RRI) logo can be hidden from Admin → Branding.
+  const showMain = b.showMainLogo !== false
   // Wheel size: as large as the viewport allows. In big-wheel mode the header floats and controls sit beside the wheel,
   // so the wheel can use (almost) the full screen height.
   const wheelSize = bigWheel
@@ -163,11 +165,13 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
       >
         <div className={`flex min-w-0 items-center gap-[clamp(10px,1.2vw,20px)] ${presentation && !bigWheel ? 'flex-col wide:flex-row' : ''} ${bigWheel ? 'wide:max-w-[18vw] wide:flex-col wide:items-start' : ''} ${!presentation && b.partnerLogo ? 'phone:flex-col phone:items-start phone:gap-1.5' : ''}`}>
           <div className="flex shrink-0 items-center gap-[clamp(8px,1vw,16px)]">
-            <BrandLogo logo={b.logo} companyName={b.companyName} variant="badge" className={`shrink-0 shadow-[0_8px_24px_rgba(0,0,0,0.45)] ${presentation ? 'h-[clamp(48px,7vh,96px)] w-[clamp(48px,7vh,96px)]' : 'h-12 w-12'}`} />
+            {showMain && (
+              <BrandLogo logo={b.logo} companyName={b.companyName} variant="badge" className={`shrink-0 shadow-[0_8px_24px_rgba(0,0,0,0.45)] ${presentation ? 'h-[clamp(48px,7vh,96px)] w-[clamp(48px,7vh,96px)]' : 'h-12 w-12'}`} />
+            )}
             {b.partnerLogo && (
               <>
-                <span aria-hidden className={`font-display font-light text-fg/45 ${presentation ? 'text-[clamp(1.2rem,3vh,2.4rem)]' : 'text-xl'}`}>×</span>
-                <PartnerLogo logo={b.partnerLogo} name={b.partnerName} className={presentation ? 'h-[clamp(48px,7vh,96px)] text-[clamp(12px,1.6vh,20px)]' : 'h-12 text-[12px]'} />
+                {showMain && <span aria-hidden className={`font-display font-light text-fg/45 ${presentation ? 'text-[clamp(1.2rem,3vh,2.4rem)]' : 'text-xl'}`}>×</span>}
+                <PartnerLogo logo={b.partnerLogo} name={b.partnerName} dark={b.partnerLogoBg === 'black'} className={presentation ? 'h-[clamp(48px,7vh,96px)] text-[clamp(12px,1.6vh,20px)]' : 'h-12 text-[12px]'} />
               </>
             )}
           </div>
