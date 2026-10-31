@@ -30,7 +30,8 @@ export function winnersToCsv(winners: WinnerRecord[]): string {
       Winner: w.participantName,
       Prize: w.prizeName,
       'Date & time': formatDateTime(w.timestamp),
-      'Removed from later draws': w.removedFromPool ? 'Yes' : 'No',
+      Status: w.absent ? 'Absent — prize redrawn' : 'Won',
+      'Removed from later draws': w.removedFromPool || w.absent ? 'Yes' : 'No',
       'Animation style': w.mode,
     }))
   return '﻿' + Papa.unparse(rows)

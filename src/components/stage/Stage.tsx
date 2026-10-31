@@ -295,6 +295,7 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
             onCelebrate={ctrl.onCelebrate}
             onContinue={ctrl.continueBatch}
             onClose={closeReveal}
+            onAbsent={ctrl.absentRedraw}
           />
         )}
       </AnimatePresence>

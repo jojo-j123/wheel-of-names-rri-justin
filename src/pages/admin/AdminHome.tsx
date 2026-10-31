@@ -20,7 +20,7 @@ export function AdminHome() {
     { to: '/admin/event', icon: CalendarDays, title: 'Event', text: event.eventDate ? formatDate(event.eventDate) : 'Name, date and description', cta: 'Edit event' },
     { to: '/admin/branding', icon: Palette, title: 'Branding', text: `${event.branding.companyName} logo and colours`, cta: 'Change branding' },
     { to: '/admin/draw', icon: SlidersHorizontal, title: 'Draw settings', text: `${MODE_LABELS[event.animationSettings.mode].title} · ${event.wheelSettings.removeWinners ? 'winners removed' : 'winners stay in'}`, cta: 'Draw settings' },
-    { to: '/admin/winners', icon: History, title: 'Winner history', text: `${plural(event.winnerHistory.length, 'winner')} so far`, cta: 'View winners' },
+    { to: '/admin/winners', icon: History, title: 'Winner history', text: `${plural(event.winnerHistory.filter((w) => !w.absent).length, 'winner')} so far`, cta: 'View winners' },
   ]
   return (
     <div className="space-y-8">
@@ -50,7 +50,7 @@ export function AdminHome() {
         <Stat label="Participants" value={event.participants.length} />
         <Stat label="Eligible" value={eligible} tone="brand" />
         <Stat label="Prizes" value={event.prizes.length} />
-        <Stat label="Winners" value={event.winnerHistory.length} />
+        <Stat label="Winners" value={event.winnerHistory.filter((w) => !w.absent).length} />
       </div>
 
       <PrizeSelector event={event} />

@@ -4,7 +4,7 @@ import type { WheelHandle } from '../components/wheel/WheelCanvas'
 import { celebrate, stopCelebration } from '../components/winner/Celebration'
 import { sound } from '../lib/audio/soundEngine'
 import { planDraw } from '../lib/draw/selectWinner'
-import { appendAudit, prizeRemaining, recordWinner, undoLastDraw } from '../lib/event/operations'
+import { appendAudit, markWinnerAbsent, prizeRemaining, recordWinner, undoLastDraw } from '../lib/event/operations'
 import { secureRandomFloat } from '../lib/random/secureRandom'
 import { resolveTimings } from '../lib/wheel/timings'
 import { segmentAtPointer } from '../lib/wheel/wheelMath'
@@ -212,6 +212,19 @@ export function useDrawController(eventId: string, wheelRef: React.RefObject<Whe
     later(650, () => spin())
   }, [dismiss, spin])
 
+  /** Winner isn't here: give the prize back (quantity unchanged), take them out of the draw, and spin again. */
+  const absentRedraw = useCallback(() => {
+    const d = useDraw.getState()
+    const rec = d.current?.record
+    if (!rec || !(d.phase === 'CELEBRATION' || d.phase === 'COMPLETE' || d.phase === 'WINNER_REVEAL')) return
+    useApp.getState().mutateEvent(eventId, (e) => markWinnerAbsent(e, rec.id), { immediate: true })
+    // In a multi-winner draw, this place has to be drawn again.
+    if (d.batch) useDraw.getState().set({ batch: { ...d.batch, winners: d.batch.winners.filter((w) => w.participantId !== rec.participantId) } })
+    toast.info(`${rec.participantName} isn’t here — ${rec.prizeName} goes back in. Drawing again…`)
+    dismiss()
+    later(650, () => spin())
+  }, [dismiss, spin, eventId])
+
   // Leaving the screen mid-draw must never leave the app stuck.
   useEffect(
     () => () => {
@@ -223,7 +236,7 @@ export function useDrawController(eventId: string, wheelRef: React.RefObject<Whe
     [eventId],
   )
 
-  return { spin, dismiss, continueBatch, emergencyStop, resetCurrentDraw, undoLast, toggleLock, onNameRevealed, onCelebrate }
+  return { spin, dismiss, continueBatch, absentRedraw, emergencyStop, resetCurrentDraw, undoLast, toggleLock, onNameRevealed, onCelebrate }
 }
 
 export type DrawController = ReturnType<typeof useDrawController>
