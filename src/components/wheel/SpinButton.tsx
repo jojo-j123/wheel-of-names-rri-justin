@@ -10,11 +10,13 @@ interface Props {
   disabled: boolean
   label: string
   color: string
+  /** Showtime: a gold rim and poster type. */
+  rim?: string
   size: 'md' | 'lg'
   onSpin(): void
 }
 
-export function SpinButton({ phase, locked, disabled, label, color, size, onSpin }: Props) {
+export function SpinButton({ phase, locked, disabled, label, color, rim, size, onSpin }: Props) {
   const spinning = isSpinning(phase) || isRevealing(phase)
   const text = locked ? 'Locked' : spinning ? 'Drawing…' : label
   return (
@@ -27,12 +29,16 @@ export function SpinButton({ phase, locked, disabled, label, color, size, onSpin
       whileTap={{ scale: 0.95 }}
       animate={phase === 'PRE_SPIN' ? { scale: [1, 0.94, 1.02, 1] } : { scale: 1 }}
       transition={{ duration: 0.45 }}
-      className={`relative inline-flex items-center justify-center gap-3 rounded-full font-display font-bold uppercase tracking-[0.18em] text-white transition-[opacity,filter] disabled:cursor-not-allowed ${
-        size === 'lg' ? 'h-[clamp(56px,8vh,92px)] px-[clamp(40px,5vw,84px)] text-[clamp(1.1rem,2vh,1.8rem)]' : 'h-16 px-12 text-lg'
+      className={`relative inline-flex items-center justify-center gap-3 rounded-full uppercase text-white transition-[opacity,filter] disabled:cursor-not-allowed ${rim ? 'font-show tracking-[0.22em]' : 'font-display font-bold tracking-[0.18em]'} ${
+        size === 'lg'
+          ? `h-[clamp(56px,8vh,92px)] px-[clamp(40px,5vw,84px)] ${rim ? 'text-[clamp(1.4rem,3vh,2.6rem)]' : 'text-[clamp(1.1rem,2vh,1.8rem)]'}`
+          : `h-16 px-12 ${rim ? 'text-2xl' : 'text-lg'}`
       } ${spinning ? 'opacity-60' : ''} ${disabled && !spinning ? 'opacity-40' : ''}`}
       style={{
         background: `linear-gradient(180deg, ${color} 0%, ${rgba(color, 0.82)} 100%)`,
-        boxShadow: `0 18px 40px -12px ${rgba(color, 0.8)}, inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -3px 0 rgba(0,0,0,0.18)`,
+        boxShadow: rim
+          ? `0 0 0 4px ${rim}, 0 0 50px ${rgba(color, 0.75)}, inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -6px 0 rgba(0,0,0,0.22)`
+          : `0 18px 40px -12px ${rgba(color, 0.8)}, inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -3px 0 rgba(0,0,0,0.18)`,
       }}
     >
       {!spinning && !disabled && !locked && (

@@ -3,6 +3,8 @@
 @theme {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Sora Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  /* Showtime stage: tall poster type that reads from the back of the room. */
+  --font-show: "Anton", Impact, "Arial Narrow", sans-serif;
   --color-rri: #d0453a;
   --color-success: #1f8a5b;
   --color-danger: #c62f2f;
@@ -78,6 +80,10 @@ body {
   outline-offset: 2px;
 }
 
+.font-show {
+  font-family: var(--font-show);
+  font-weight: 400;
+}
 .font-display {
   font-family: var(--font-display);
   font-feature-settings: "ss01" on;
@@ -150,3 +156,15 @@ input[type="color"]::-moz-color-swatch {
 
 /* Phones in portrait. Only used for small-screen fixes so laptops, TVs and LED walls stay untouched. */
 @custom-variant phone (@media (max-width: 599px));
+
+/* Showtime spotlights: a slow sway, like follow-spots on a stage. */
+@keyframes showtime-sway {
+  0%, 100% { translate: 0 0; opacity: 1; }
+  50% { translate: 2.5vw 0; opacity: 0.75; }
+}
+.showtime-beam {
+  animation: showtime-sway 9s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .showtime-beam { animation: none; }
+}

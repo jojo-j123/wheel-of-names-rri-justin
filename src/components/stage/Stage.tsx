@@ -66,7 +66,12 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
   const names = useMemo(() => list.map((p) => p.name), [list])
   const namesRef = useRef(names)
   namesRef.current = names
-  const colors = useMemo(() => ({ primary: b.primaryColor, secondary: b.secondaryColor, accent: b.accentColor }), [b.primaryColor, b.secondaryColor, b.accentColor])
+  // Showtime is the default big-screen style; 'classic' is the original, quieter look.
+  const show = b.stageStyle !== 'classic'
+  const colors = useMemo(
+    () => ({ primary: b.primaryColor, secondary: b.secondaryColor, accent: b.accentColor, style: show ? ('showtime' as const) : ('classic' as const) }),
+    [b.primaryColor, b.secondaryColor, b.accentColor, show],
+  )
 
   const prize = getActivePrize(event)
   const remaining = prize ? prizeRemaining(event, prize) : 0
@@ -159,6 +164,20 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
         background: `radial-gradient(ellipse 70% 60% at 70% 55%, ${rgba(b.primaryColor, sp.glow)} 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 10% 0%, ${rgba(b.accentColor, sp.glow / 2)} 0%, transparent 60%), linear-gradient(180deg, ${mix(sp.bg, '#ffffff', 0.03)} 0%, ${sp.bg} 100%)`,
       }}
     >
+      {/* Showtime: two stage spotlights sweeping down onto the wheel. Decorative only. */}
+      {show && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div
+            className="showtime-beam absolute -top-[10vh] left-[52%] h-[130vh] w-[16vw] origin-top -rotate-[22deg]"
+            style={{ background: `linear-gradient(to bottom, ${rgba(b.accentColor, 0.22)}, transparent 85%)`, clipPath: 'polygon(42% 0, 58% 0, 100% 100%, 0 100%)' }}
+          />
+          <div
+            className="showtime-beam absolute -top-[10vh] left-[80%] h-[130vh] w-[16vw] origin-top rotate-[20deg] [animation-delay:-3s]"
+            style={{ background: `linear-gradient(to bottom, ${rgba(b.accentColor, 0.18)}, transparent 85%)`, clipPath: 'polygon(42% 0, 58% 0, 100% 100%, 0 100%)' }}
+          />
+        </div>
+      )}
+
       {/* Header */}
       <header
         className={`relative z-20 flex items-center gap-4 px-[clamp(16px,3vw,48px)] pt-[clamp(12px,2.2vh,32px)] ${presentation && !bigWheel ? 'justify-center' : 'justify-between'} ${!presentation && b.partnerLogo ? 'phone:items-start' : ''} ${bigWheel ? 'wide:pointer-events-none wide:absolute wide:inset-x-0 wide:top-0 [&_a]:pointer-events-auto' : ''}`}
@@ -185,6 +204,7 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
         </div>
         {!presentation && (
           <div className={`flex items-center gap-2 ${b.partnerLogo ? 'phone:mt-1' : ''}`}>
+            {show && <LiveBadge color={b.primaryColor} className="hidden sm:inline-flex" />}
             <Link
               to="/admin"
               className="inline-flex h-10 items-center gap-2 rounded-xl bg-fg/6 px-4 text-sm font-semibold tracking-wide text-fg/70 ring-1 ring-fg/10 transition hover:bg-fg/12 hover:text-fg"
@@ -193,6 +213,7 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
             </Link>
           </div>
         )}
+        {presentation && show && !bigWheel && <LiveBadge color={b.primaryColor} className="absolute right-[clamp(16px,3vw,48px)] top-[clamp(12px,2.2vh,32px)] hidden wide:inline-flex" big />}
       </header>
 
       {/* Main: prize beside the wheel (or big-wheel layout without it), stacked on portrait/mobile. */}
@@ -238,12 +259,12 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
             <div className="h-[clamp(28px,4vh,48px)]" aria-hidden={!spinning}>
               <motion.div
                 animate={{ opacity: spinning ? 1 : 0, y: spinning ? 0 : 6 }}
-                className="rounded-full bg-fg/8 px-5 py-1.5 font-display text-[clamp(1rem,2.4vh,1.8rem)] font-semibold ring-1 ring-fg/12"
+                className={`rounded-full bg-fg/8 px-5 py-1.5 ring-1 ring-fg/12 ${show ? 'font-show text-[clamp(1.2rem,3vh,2.4rem)] uppercase tracking-wide' : 'font-display text-[clamp(1rem,2.4vh,1.8rem)] font-semibold'}`}
               >
                 <span ref={liveNameRef} />
               </motion.div>
             </div>
-            <SpinButton phase={phase} locked={locked} disabled={!!blocker && !pendingBatch} label={spinLabel} color={b.primaryColor} size={presentation ? 'lg' : 'md'} onSpin={ctrl.spin} />
+            <SpinButton phase={phase} locked={locked} disabled={!!blocker && !pendingBatch} label={spinLabel} color={b.primaryColor} rim={show ? b.accentColor : undefined} size={presentation ? 'lg' : 'md'} onSpin={ctrl.spin} />
             <div className={`tabular text-center text-[clamp(0.8rem,1.5vh,1.15rem)] text-fg/55 ${bigWheel ? 'wide:max-w-[26vw] wide:text-left' : ''}`}>
               {blocker && phase === 'IDLE' && !pendingBatch ? (
                 <span className={`flex flex-col items-center gap-3 ${bigWheel ? 'wide:items-start' : ''}`}>
@@ -300,5 +321,21 @@ export function Stage({ event, mode, onPresent, onExitPresentation }: Props) {
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+/** Showtime "LIVE DRAW" badge with a pulsing dot. */
+function LiveBadge({ color, className = '', big = false }: { color: string; className?: string; big?: boolean }) {
+  return (
+    <span
+      className={`items-center gap-[0.6em] rounded-full font-display font-bold tracking-[0.25em] ${big ? 'px-[1.4em] py-[0.7em] text-[clamp(0.8rem,1.5vh,1.2rem)]' : 'h-10 px-4 text-xs'} ${className}`}
+      style={{ background: rgba(color, 0.16), border: `2px solid ${color}` }}
+    >
+      <span className="relative flex h-[0.8em] w-[0.8em]">
+        <span className="absolute inset-0 animate-ping rounded-full opacity-70" style={{ background: color }} />
+        <span className="relative h-full w-full rounded-full" style={{ background: color, boxShadow: `0 0 12px ${color}` }} />
+      </span>
+      LIVE DRAW
+    </span>
   )
 }
