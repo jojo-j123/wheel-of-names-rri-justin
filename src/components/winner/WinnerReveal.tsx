@@ -3,7 +3,7 @@ import { Trophy } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import type { Branding, DrawPhase } from '../../types'
 import type { BatchState, CurrentDraw } from '../../store/drawStore'
-import { rgba } from '../../lib/branding'
+import { mix, rgba } from '../../lib/branding'
 
 interface Props {
   phase: DrawPhase
@@ -54,6 +54,12 @@ export function WinnerReveal({ phase, current, batch, branding, reduced, onNameR
   const showActions = phase === 'CELEBRATION' || phase === 'COMPLETE'
   const kicker = current.batchTotal > 1 ? `Winner #${current.batchPosition} of ${current.batchTotal}` : 'Winner!'
   const { primaryColor: primary, accentColor: accent } = branding
+  const show = branding.stageStyle !== 'classic'
+  // Showtime: tall poster type fits ~40% more letters per line, so it can go bigger.
+  const nameSize = show
+    ? `clamp(3.2rem, min(${Math.max(5.5, Math.min(16, 150 / Math.max(name.length, 5)))}vw, 30vh), 22rem)`
+    : `clamp(2.6rem, min(${nameVw}vw, 17vh), 12rem)`
+  const deep = mix(primary, '#000000', 0.5)
 
   const rise = (delay: number, extra: object = {}) =>
     reduced
@@ -102,9 +108,12 @@ export function WinnerReveal({ phase, current, batch, branding, reduced, onNameR
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 h-[180vmax] w-[180vmax] -translate-x-1/2 -translate-y-1/2"
           initial={{ opacity: 0 }}
-          animate={{ opacity: grand ? 0.5 : 0.32 }}
+          animate={{ opacity: show ? 0.7 : grand ? 0.5 : 0.32 }}
           transition={{ delay: t.name, duration: 1.4 }}
-          style={{ maskImage: 'radial-gradient(circle, black 0%, transparent 38%)', WebkitMaskImage: 'radial-gradient(circle, black 0%, transparent 38%)' }}
+          style={{
+            maskImage: `radial-gradient(circle, black 0%, transparent ${show ? 55 : 38}%)`,
+            WebkitMaskImage: `radial-gradient(circle, black 0%, transparent ${show ? 55 : 38}%)`,
+          }}
         >
           <div className="animate-rays h-full w-full" style={{ background: `repeating-conic-gradient(from 0deg, ${rgba(accent, 0.22)} 0deg 5deg, transparent 5deg 15deg)` }} />
         </motion.div>
@@ -133,8 +142,8 @@ export function WinnerReveal({ phase, current, batch, branding, reduced, onNameR
         {/* Name — the hero. Mask reveal + blur + scale + spring settle + glow. */}
         <div className="overflow-hidden px-[4vw] py-[1.5vh]">
           <motion.h1
-            className="font-display font-bold leading-[1.02] tracking-tight"
-            style={{ fontSize: `clamp(2.6rem, min(${nameVw}vw, 17vh), 12rem)` }}
+            className={show ? 'font-show uppercase leading-[1.02]' : 'font-display font-bold leading-[1.02] tracking-tight'}
+            style={{ fontSize: nameSize }}
             initial={reduced ? { opacity: 0 } : { y: '105%', opacity: 0, scale: 1.18, filter: 'blur(22px)' }}
             animate={
               started
@@ -145,7 +154,9 @@ export function WinnerReveal({ phase, current, batch, branding, reduced, onNameR
                       opacity: 1,
                       scale: 1,
                       filter: 'blur(0px)',
-                      textShadow: [`0 0 0px ${rgba(primary, 0)}`, `0 0 60px ${rgba(primary, 0.9)}`, `0 0 34px ${rgba(primary, 0.55)}`],
+                      textShadow: show
+                        ? [`0 0 0 ${rgba(deep, 0)}, 0 0 0px ${rgba(accent, 0)}`, `0 0.04em 0 ${deep}, 0 0 90px ${rgba(accent, 0.8)}`, `0 0.04em 0 ${deep}, 0 0 60px ${rgba(accent, 0.45)}`]
+                        : [`0 0 0px ${rgba(primary, 0)}`, `0 0 60px ${rgba(primary, 0.9)}`, `0 0 34px ${rgba(primary, 0.55)}`],
                     }
                 : {}
             }
@@ -167,10 +178,22 @@ export function WinnerReveal({ phase, current, batch, branding, reduced, onNameR
         </div>
 
         {/* Prize line + card. */}
-        <motion.div {...rise(t.prize)} className="mt-3 flex items-center gap-3 font-display text-[clamp(1.2rem,2.6vw,2.6rem)] font-semibold">
-          <Trophy className="shrink-0" style={{ color: accent, width: '1em', height: '1em' }} />
-          <span>{current.prize?.name ?? 'Winner'}</span>
-        </motion.div>
+        {show && current.prize ? (
+          <motion.div {...rise(t.prize, { scale: 0.9 })} className="mt-3 flex h-[clamp(64px,11vh,132px)] items-stretch drop-shadow-[0_18px_40px_rgba(0,0,0,0.6)]">
+            <div className="flex aspect-square items-center justify-center rounded-l-[1.2rem]" style={{ background: primary }}>
+              <Trophy className="h-1/2 w-1/2 text-white" strokeWidth={1.8} />
+            </div>
+            <div className="flex flex-col justify-center rounded-r-[1.2rem] px-[clamp(20px,2.4vw,44px)] text-left" style={{ background: accent, color: mix(accent, '#000000', 0.82) }}>
+              <span className="text-[clamp(0.7rem,1.4vh,1rem)] font-bold uppercase tracking-[0.35em]">Takes home</span>
+              <span className="font-show text-[clamp(1.6rem,5vh,4rem)] uppercase leading-none">{current.prize.name}</span>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div {...rise(t.prize)} className="mt-3 flex items-center gap-3 font-display text-[clamp(1.2rem,2.6vw,2.6rem)] font-semibold">
+            <Trophy className="shrink-0" style={{ color: accent, width: '1em', height: '1em' }} />
+            <span>{current.prize?.name ?? 'Winner'}</span>
+          </motion.div>
+        )}
         {current.prize?.image && (
           <motion.div
             {...rise(t.prize + 0.15, { scale: 0.9 })}

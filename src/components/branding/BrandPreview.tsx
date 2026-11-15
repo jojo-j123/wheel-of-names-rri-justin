@@ -12,7 +12,7 @@ export function BrandPreview({ branding, eventName }: { branding: Branding; even
   useEffect(() => {
     const c = canvasRef.current
     if (!c) return
-    renderFace(c, 440, DEMO_NAMES.slice(0, 12), { primary: branding.primaryColor, secondary: branding.secondaryColor, accent: branding.accentColor })
+    renderFace(c, 440, DEMO_NAMES.slice(0, 12), { primary: branding.primaryColor, secondary: branding.secondaryColor, accent: branding.accentColor, style: branding.stageStyle === 'classic' ? 'classic' : 'showtime' })
   }, [branding.primaryColor, branding.secondaryColor, branding.accentColor])
   const sp = stagePalette(branding)
   return (

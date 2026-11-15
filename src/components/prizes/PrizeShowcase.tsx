@@ -13,6 +13,7 @@ interface Props {
 
 /** The "now drawing" prize — top of the visual hierarchy before a draw. */
 export function PrizeShowcase({ prize, remaining, branding, big, emptyText }: Props) {
+  const show = branding.stageStyle !== 'classic'
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -27,7 +28,7 @@ export function PrizeShowcase({ prize, remaining, branding, big, emptyText }: Pr
           className={`stage-kicker ${prize ? 'text-[clamp(0.7rem,1.2vh,1rem)]' : big ? 'text-[clamp(1rem,2.4vh,2.2rem)]' : 'text-[clamp(0.85rem,1.6vh,1.3rem)]'}`}
           style={{ color: branding.stageTheme === 'light' ? mix(branding.accentColor, '#000000', 0.55) : branding.accentColor }}
         >
-          {prize ? 'Now drawing' : 'Ready to draw'}
+          {prize ? (show ? 'Now playing for' : 'Now drawing') : 'Ready to draw'}
         </p>
         {prize ? (
           <>
@@ -51,9 +52,18 @@ export function PrizeShowcase({ prize, remaining, branding, big, emptyText }: Pr
             <div className={`mt-[1.8vh] flex items-center gap-3 wide:hidden ${big ? 'phone:hidden' : ''}`}>
               {prize.image && <img src={prize.image} alt="" className="h-14 w-14 rounded-xl object-cover ring-1 ring-fg/15" />}
             </div>
-            <h2 className={`mt-[1vh] font-display font-bold leading-[1.05] tracking-tight ${big ? 'text-[clamp(1.8rem,4.4vh,4.2rem)]' : 'text-[clamp(1.5rem,3.6vh,3rem)]'}`}>
-              {prize.name}
-            </h2>
+            {show ? (
+              <h2
+                className={`mt-[1vh] font-show uppercase leading-[0.95] ${big ? 'text-[clamp(2.6rem,7.5vh,7.5rem)]' : 'text-[clamp(2rem,5vh,4.5rem)]'}`}
+                style={{ textShadow: `0 0.05em 0 ${mix(branding.primaryColor, '#000000', 0.45)}, 0 0 0.6em ${rgba(branding.primaryColor, 0.5)}` }}
+              >
+                {prize.name}
+              </h2>
+            ) : (
+              <h2 className={`mt-[1vh] font-display font-bold leading-[1.05] tracking-tight ${big ? 'text-[clamp(1.8rem,4.4vh,4.2rem)]' : 'text-[clamp(1.5rem,3.6vh,3rem)]'}`}>
+                {prize.name}
+              </h2>
+            )}
             {(prize.description || prize.sponsor) && (
               <p className="mt-1 text-[clamp(0.9rem,1.7vh,1.35rem)] text-fg/60">
                 {prize.description}
@@ -61,16 +71,40 @@ export function PrizeShowcase({ prize, remaining, branding, big, emptyText }: Pr
                 {prize.sponsor ? `Sponsored by ${prize.sponsor}` : ''}
               </p>
             )}
-            {prize.quantity > 1 && (
-              <p className="mt-[1.2vh] inline-flex items-center gap-2 rounded-full bg-fg/8 px-3 py-1 text-[clamp(0.75rem,1.4vh,1.05rem)] font-semibold text-fg/80 ring-1 ring-fg/10">
-                {remaining} of {prize.quantity} left
-              </p>
-            )}
+            {prize.quantity > 1 &&
+              (show ? (
+                <PrizeTicket remaining={remaining} quantity={prize.quantity} accent={branding.accentColor} big={big} />
+              ) : (
+                <p className="mt-[1.2vh] inline-flex items-center gap-2 rounded-full bg-fg/8 px-3 py-1 text-[clamp(0.75rem,1.4vh,1.05rem)] font-semibold text-fg/80 ring-1 ring-fg/10">
+                  {remaining} of {prize.quantity} left
+                </p>
+              ))}
           </>
         ) : (
-          <p className={`mt-[1.2vh] font-display font-semibold leading-tight tracking-tight text-fg/85 ${big ? 'max-w-[34vw] text-[clamp(2rem,5.5vh,5rem)]' : 'max-w-md text-[clamp(1.4rem,3.4vh,2.6rem)]'}`}>{emptyText}</p>
+          <p
+            className={`mt-[1.2vh] leading-tight text-fg/85 ${show && big ? 'font-show uppercase' : 'font-display font-semibold tracking-tight'} ${big ? 'max-w-[34vw] text-[clamp(2rem,5.5vh,5rem)]' : 'max-w-md text-[clamp(1.4rem,3.4vh,2.6rem)]'}`}
+          >
+            {emptyText}
+          </p>
         )}
       </motion.div>
     </AnimatePresence>
+  )
+}
+
+/** Showtime: a gold "prize ticket" with a perforated stub showing what's left. */
+function PrizeTicket({ remaining, quantity, accent, big }: { remaining: number; quantity: number; accent: string; big: boolean }) {
+  const ink = mix(accent, '#000000', 0.82)
+  return (
+    <div className={`mt-[2vh] flex items-stretch drop-shadow-[0_14px_30px_rgba(0,0,0,0.55)] ${big ? 'h-[clamp(64px,10vh,120px)]' : 'h-[clamp(56px,8vh,88px)]'}`} style={{ color: ink }}>
+      <div className="flex flex-col justify-center rounded-l-[0.9em] px-[1.4em] text-[clamp(12px,1.6vh,20px)]" style={{ background: accent }}>
+        <span className="text-[0.75em] font-bold uppercase tracking-[0.3em]">Prize ticket</span>
+        <span className="font-show text-[2.2em] leading-none">{remaining} of {quantity} left</span>
+      </div>
+      <div className="w-0 border-l-[3px] border-dashed" style={{ borderColor: ink, background: accent }} />
+      <div className="flex items-center rounded-r-[0.9em] px-[0.9em]" style={{ background: accent }}>
+        <Gift aria-hidden className="h-[clamp(24px,4.5vh,52px)] w-[clamp(24px,4.5vh,52px)]" strokeWidth={1.8} />
+      </div>
+    </div>
   )
 }

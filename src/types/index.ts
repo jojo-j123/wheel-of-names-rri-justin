@@ -62,6 +62,8 @@ export interface Branding {
   showMainLogo?: boolean
   /** Card behind the partner logo: white (default) or black, for logos made for dark backgrounds. */
   partnerLogoBg?: 'white' | 'black'
+  /** Big-screen style: 'showtime' (default: game-show stage, marquee lights, poster type) or 'classic'. */
+  stageStyle?: 'showtime' | 'classic'
 }
 
 export type StageTheme = 'dark' | 'light'

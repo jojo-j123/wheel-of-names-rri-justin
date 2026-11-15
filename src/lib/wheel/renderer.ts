@@ -8,6 +8,8 @@ export interface WheelColors {
   primary: string
   secondary: string
   accent: string
+  /** 'showtime': gold marquee rim with big bulbs. Default classic. */
+  style?: 'showtime' | 'classic'
 }
 
 export type LabelTier = 'full' | 'compact' | 'micro'
@@ -182,10 +184,12 @@ export function renderRim(canvas: HTMLCanvasElement, size: number, count: number
   ctx.save()
   ctx.translate(r, r)
   const band = ctx.createLinearGradient(-r, -r, r, r)
-  band.addColorStop(0, mix(colors.secondary, '#ffffff', 0.35))
-  band.addColorStop(0.35, mix(colors.secondary, '#000000', 0.35))
-  band.addColorStop(0.65, mix(colors.secondary, '#ffffff', 0.18))
-  band.addColorStop(1, mix(colors.secondary, '#000000', 0.5))
+  // Showtime: a polished gold marquee band (from the accent colour); classic: a dark metal band.
+  const metal = colors.style === 'showtime' ? colors.accent : colors.secondary
+  band.addColorStop(0, mix(metal, '#ffffff', 0.35))
+  band.addColorStop(0.35, mix(metal, '#000000', colors.style === 'showtime' ? 0.2 : 0.35))
+  band.addColorStop(0.65, mix(metal, '#ffffff', 0.18))
+  band.addColorStop(1, mix(metal, '#000000', 0.5))
   ctx.beginPath()
   ctx.arc(0, 0, outer, 0, Math.PI * 2)
   ctx.arc(0, 0, inner, 0, Math.PI * 2, true)
@@ -238,9 +242,10 @@ export function drawBulbs(
   speed: number,
   colors: WheelColors,
 ) {
-  const count = 32
+  const show = colors.style === 'showtime'
+  const count = show ? 48 : 32
   const rr = r * 0.965
-  const br = r * 0.011
+  const br = r * (show ? 0.016 : 0.011)
   for (let i = 0; i < count; i++) {
     const a = TOP + (i / count) * Math.PI * 2
     let on: number
@@ -251,10 +256,16 @@ export function drawBulbs(
     const y = Math.sin(a) * rr
     ctx.beginPath()
     ctx.arc(x, y, br, 0, Math.PI * 2)
-    ctx.fillStyle = on > 0.6 ? mix(colors.accent, '#ffffff', 0.5) : rgba(colors.accent, 0.25 + on * 0.5)
+    ctx.fillStyle = show
+      ? on > 0.6
+        ? '#FFF3D6'
+        : rgba(mix(colors.accent, '#000000', 0.45), 0.6 + on * 0.4)
+      : on > 0.6
+        ? mix(colors.accent, '#ffffff', 0.5)
+        : rgba(colors.accent, 0.25 + on * 0.5)
     if (on > 0.6) {
-      ctx.shadowColor = colors.accent
-      ctx.shadowBlur = br * 3
+      ctx.shadowColor = show ? '#FFD98A' : colors.accent
+      ctx.shadowBlur = br * (show ? 4 : 3)
     } else ctx.shadowBlur = 0
     ctx.fill()
   }

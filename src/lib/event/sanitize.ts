@@ -91,6 +91,7 @@ export function sanitizeBranding(v: unknown): Branding {
     stageTheme: b.stageTheme === 'light' ? 'light' : 'dark',
     // Optional settings are only written when used, so older events stay byte-for-byte unchanged.
     ...(b.showMainLogo === false ? { showMainLogo: false } : {}),
+    ...(b.stageStyle === 'classic' ? { stageStyle: 'classic' as const } : {}),
     ...(sanitizeImage(b.partnerLogo)
       ? {
           partnerLogo: sanitizeImage(b.partnerLogo),

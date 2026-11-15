@@ -52,6 +52,15 @@ export function BrandingEditor({ value, onChange }: { value: Branding; onChange(
         ]}
         onPick={(v) => set('hubLogo', v)}
       />
+      <Choice
+        label="Big-screen style"
+        value={value.stageStyle === 'classic' ? 'classic' : 'showtime'}
+        options={[
+          { v: 'showtime', label: 'Showtime — marquee lights & poster type' },
+          { v: 'classic', label: 'Classic — clean & minimal' },
+        ]}
+        onPick={(v) => set('stageStyle', v === 'classic' ? 'classic' : undefined)}
+      />
       <div>
         <p className="mb-2 text-sm font-semibold">Big-screen look</p>
         <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Big-screen look">
